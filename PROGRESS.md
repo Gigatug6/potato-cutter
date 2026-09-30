@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : 0 — Infrastructure
-- **Prochaine étape : 1.1 rng/math/events** (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : 2 — Stores
+- **Prochaine étape : 2.1 stores Pinia profile + persist** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -12,15 +12,15 @@
 - [x] 0.4 CLAUDE.md / PROGRESS.md / README
 - [x] 0.5 Playwright + WebGL headless — `make e2e`
 ### Phase 1 — Domaine pur
-- [ ] 1.1 rng/math/events
-- [ ] 1.2 potatoShape
-- [ ] 1.3 peelMap
-- [ ] 1.4 cutModes/cutPlan
-- [ ] 1.5 pieceGeometry
-- [ ] 1.6 scoring
-- [ ] 1.7 rarities/knives
-- [ ] 1.8 save
-- [ ] 1.9 crate
+- [x] 1.1 rng/math/events
+- [x] 1.2 potatoShape
+- [x] 1.3 peelMap
+- [x] 1.4 cutModes/cutPlan
+- [x] 1.5 pieceGeometry
+- [x] 1.6 scoring
+- [x] 1.7 rarities/knives
+- [x] 1.8 save
+- [x] 1.9 crate
 ### Phase 2 — Stores
 - [ ] 2.1 profile + persist
 - [ ] 2.2 game
@@ -59,3 +59,6 @@
 
 ### 2026-09-30 — Étape 0.5 + Makefile
 - Playwright 1.63.0, WebGL OK via swiftshader, smoke e2e vert.
+
+### 2026-09-30 — Phase 1 complète
+- Domaine pur : 45 tests verts, build OK. pieceGeometry < 2 s pour le mode dés en test.
