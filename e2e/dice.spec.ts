@@ -3,7 +3,7 @@ import { api, open, shot, state } from './helpers'
 
 test('mode dés : 3 passes, beaucoup de pièces', async ({ page }) => {
   const errors = await open(page)
-  await api(page, 'startRound', 'des', 7)
+  await api(page, 'startRound', 'des', 8)
   await page.waitForTimeout(400)
   await api(page, 'peelAll')
   await api(page, 'goToCutting')

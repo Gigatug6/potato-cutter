@@ -11,9 +11,13 @@ export interface PotatoShape {
   terms: { k: Vec3; phase: number }[]
 }
 
-export function createPotatoShape(seed: number): PotatoShape {
+export function createPotatoShape(seed: number, radiiMult: Vec3 = [1, 1, 1], scale = 1): PotatoShape {
   const rng = createRng(seed)
-  const radii: Vec3 = [1.25 + rng() * 0.15, 0.85 + rng() * 0.1, 0.75 + rng() * 0.1]
+  const radii: Vec3 = [
+    (1.25 + rng() * 0.15) * radiiMult[0] * scale,
+    (0.85 + rng() * 0.1) * radiiMult[1] * scale,
+    (0.75 + rng() * 0.1) * radiiMult[2] * scale,
+  ]
   const terms = Array.from({ length: 5 }, () => ({
     k: [1 + rng() * 3, 1 + rng() * 3, 1 + rng() * 3] as Vec3,
     phase: rng() * Math.PI * 2,

@@ -1,5 +1,10 @@
 import { KNIVES, STARTER_KNIFE_ID } from '../data/knives'
 import type { CutModeId } from '../cutting/cutModes'
+import { ORDER_COUNT, type Order } from '../orders/orders'
+import { POTATOES, STARTER_POTATO_ID } from '../data/potatoes'
+import { UPGRADES } from '../data/upgrades'
+import type { QuestState } from '../quests/quests'
+import type { ScoreEntry } from '../scoring/leaderboard'
 
 export interface SaveV1 {
   version: 1
@@ -14,6 +19,13 @@ export interface SaveV1 {
     streak: number
   }
   settings: { sound: boolean; reducedMotion: boolean; pixelRatioCap: number }
+  // ajouts phase 6 (tous optionnels dans les anciennes sauvegardes, réparés par parseSave)
+  unlockedPotatoes: string[]
+  selectedPotatoId: string
+  upgrades: Record<string, number>
+  orders: Order[]
+  quests: QuestState | null
+  leaderboard: ScoreEntry[]
 }
 
 const MODES: CutModeId[] = ['rondelles', 'frites', 'des']
@@ -30,6 +42,12 @@ export function defaultSave(): SaveV1 {
       bestTimeMs: { rondelles: null, frites: null, des: null },
     },
     settings: { sound: true, reducedMotion: false, pixelRatioCap: 2 },
+    unlockedPotatoes: [STARTER_POTATO_ID],
+    selectedPotatoId: STARTER_POTATO_ID,
+    upgrades: {},
+    orders: [],
+    quests: null,
+    leaderboard: [],
   }
 }
 
@@ -68,5 +86,42 @@ export function parseSave(raw: unknown): SaveV1 {
     s.settings.reducedMotion = typeof raw.settings.reducedMotion === 'boolean' ? raw.settings.reducedMotion : false
     s.settings.pixelRatioCap = num(raw.settings.pixelRatioCap, 2, 1, 3)
   }
+  const knownPotatoes = POTATOES.map((p) => p.id)
+  if (Array.isArray(raw.unlockedPotatoes)) {
+    s.unlockedPotatoes = [...new Set([STARTER_POTATO_ID, ...raw.unlockedPotatoes.filter((x): x is string => typeof x === 'string' && knownPotatoes.includes(x))])]
+  }
+  s.selectedPotatoId =
+    typeof raw.selectedPotatoId === 'string' && s.unlockedPotatoes.includes(raw.selectedPotatoId) ? raw.selectedPotatoId : STARTER_POTATO_ID
+  if (isObj(raw.upgrades)) {
+    for (const u of UPGRADES) s.upgrades[u.id] = num(raw.upgrades[u.id], 0, 0, u.max)
+  }
+  if (Array.isArray(raw.orders)) {
+    s.orders = raw.orders.filter(validOrder).slice(0, ORDER_COUNT)
+  }
+  if (isObj(raw.quests) && typeof raw.quests.day === 'string' && Array.isArray(raw.quests.items)) {
+    const items = raw.quests.items.filter(validQuest)
+    s.quests = items.length ? { day: raw.quests.day, items } : null
+  }
+  if (Array.isArray(raw.leaderboard)) {
+    s.leaderboard = raw.leaderboard.filter(validScore).sort((a, b) => b.score - a.score).slice(0, 10)
+  }
   return s
+}
+
+const validMode = (m: unknown): m is CutModeId => typeof m === 'string' && (MODES as string[]).includes(m)
+const validGrade = (g: unknown): boolean => typeof g === 'string' && GRADES.includes(g)
+
+function validOrder(o: unknown): o is Order {
+  return isObj(o) && typeof o.id === 'string' && typeof o.dishId === 'string' && validMode(o.mode) && validGrade(o.minGrade) &&
+    typeof o.multiplier === 'number' && Number.isFinite(o.multiplier) && typeof o.label === 'string'
+}
+
+function validQuest(q: unknown): q is QuestState['items'][number] {
+  return isObj(q) && typeof q.id === 'string' && typeof q.label === 'string' && ['potatoes', 'goodGrade', 'earn', 'mode'].includes(q.type as string) &&
+    typeof q.target === 'number' && q.target > 0 && typeof q.progress === 'number' && q.progress >= 0 &&
+    typeof q.reward === 'number' && q.reward >= 0 && typeof q.claimed === 'boolean' && (q.mode === undefined || validMode(q.mode))
+}
+
+function validScore(e: unknown): e is ScoreEntry {
+  return isObj(e) && typeof e.score === 'number' && Number.isFinite(e.score) && e.score >= 0 && typeof e.potatoes === 'number' && validMode(e.mode) && typeof e.date === 'string'
 }

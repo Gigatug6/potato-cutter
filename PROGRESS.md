@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : terminé
-- **Projet terminé** — voir « Reste possible » ci-dessous (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : 6 — suggestions
+- **Prochaine étape : 6.3 moteur (variétés, pourrie, éplucheur auto, couteau visible, friteuse, jus)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -41,6 +41,13 @@
 - [x] 5.2 Juice
 - [x] 5.3 Perf/robustesse
 - [x] 5.4 Vérif finale
+
+## Phase 6 — les 9 suggestions (demande utilisateur)
+- [x] 6.1 Modules purs + schéma de sauvegarde : patates (1), commandes (2), améliorations (3), quêtes (6), classement (5), équilibrage (9)
+- [x] 6.2 Stores : profile étendu, game (chrono, commande livrée, patate pourrie, résultats différés)
+- [ ] 6.3 Moteur : variétés de patates + patate pourrie/verte (8), améliorations (éplucheur auto, grosses patates), couteau visible qui suit le pointeur (4), friteuse (8), jus : particules, nombres flottants, sons (7)
+- [ ] 6.4 UI : choix de patate + commandes + quêtes + chrono au menu, boutique à onglets (couteaux/patates/améliorations) avec aperçu 3D rotatif (4), classement, bouton Jeter
+- [ ] 6.5 e2e des nouveautés + vérification finale
 
 ## Décisions
 - D1 : three.js direct plutôt que TresJS (maillages impératifs).
@@ -97,3 +104,6 @@
 
 ### 2026-09-30 — Retours utilisateur
 - Rotation 3D de la patate (bouton « Tourner », clic droit, Maj+glisser), couleurs plus sombres (valeurs linéaires corrigées), vraies textures CC0 Poly Haven (bois, peau via brown_mud_02 + normal map, shader mélange peau/chair), pôles UV déplacés aux extrémités. e2e rotate ajouté. Textures : public/textures/LICENSE.md.
+
+### 2026-09-30 — 6.1/6.2
+- Modules purs (potatoes, upgrades, orders, quests, leaderboard) + schéma de sauvegarde tolérant + stores étendus (chrono, commandes, quêtes, patate pourrie, Jeter). Gains rééquilibrés (base 25/70/150). 92 tests verts. Seed e2e dés passée de 7 à 8 (7 = patate pourrie).

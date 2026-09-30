@@ -21,9 +21,11 @@ describe('game', () => {
     const cuts = { x: idealPositions(-1, 1, CUT_MODES.rondelles.passes[0].cuts), y: [], z: [] }
     const r = g.finishRound(B, cuts)
     expect(r!.reward).toBeGreaterThan(0)
-    expect(p.money).toBe(r!.reward)
+    // l'argent = récompense (+ éventuel bonus de commande livrée)
+    const money = p.money
+    expect(money).toBeGreaterThanOrEqual(r!.reward)
     g.finishRound(B, cuts)
-    expect(p.money).toBe(r!.reward)
+    expect(p.money).toBe(money)
     expect(g.phase).toBe('results')
     expect(p.stats.potatoes).toBe(1)
   })

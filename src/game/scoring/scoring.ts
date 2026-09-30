@@ -41,6 +41,8 @@ export function applyPrecision(pos: number, ideals: number[], precision: number)
 export interface ScoreInput {
   mode: CutModeDef; bounds: Bounds; cuts: Cuts; peelCoverage: number
   durationMs: number; gainMult: number; streak: number
+  /** multiplicateur de valeur (variété, améliorations, patate abîmée) */
+  valueMult?: number
 }
 
 export function scoreRound(i: ScoreInput): RoundResult {
@@ -53,7 +55,7 @@ export function scoreRound(i: ScoreInput): RoundResult {
   const speedBonus = clamp((par - i.durationMs / 1000) / par, 0, 1)
   const quality = 0.45 * ps + 0.45 * cs + 0.1 * completion
   const reward = Math.round(
-    i.mode.baseReward * (0.25 + quality) * (1 + 0.5 * speedBonus) * i.gainMult * streakMultiplier(i.streak),
+    i.mode.baseReward * (0.25 + quality) * (1 + 0.5 * speedBonus) * i.gainMult * streakMultiplier(i.streak) * (i.valueMult ?? 1),
   )
   return { peelScore: ps, cutScore: cs, completion, speedBonus, quality, grade: gradeOf(quality), reward, durationMs: i.durationMs }
 }

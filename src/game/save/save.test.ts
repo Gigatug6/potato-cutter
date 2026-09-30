@@ -42,3 +42,27 @@ describe('storage', () => {
     expect(() => writeSave(defaultSave())).not.toThrow()
   })
 })
+
+describe('parseSave — phase 6', () => {
+  it('anciennes sauvegardes : valeurs par défaut', () => {
+    const s = parseSave({ version: 1, money: 10 })
+    expect(s.unlockedPotatoes).toEqual(['bintje'])
+    expect(s.selectedPotatoId).toBe('bintje')
+    expect(s.orders).toEqual([])
+    expect(s.quests).toBeNull()
+  })
+  it('répare les données invalides', () => {
+    const s = parseSave({
+      version: 1, unlockedPotatoes: ['ratte', 'fantome', 3], selectedPotatoId: 'violette',
+      upgrades: { autoPeeler: 99, bigPotatoes: -2, inconnu: 4 },
+      orders: [{ bad: true }], quests: { day: 'x', items: [{ nope: 1 }] },
+      leaderboard: [{ score: 'a' }, { score: 5, potatoes: 1, mode: 'des', date: 'd' }],
+    })
+    expect(s.unlockedPotatoes).toEqual(['bintje', 'ratte'])
+    expect(s.selectedPotatoId).toBe('bintje') // non débloquée
+    expect(s.upgrades).toEqual({ autoPeeler: 5, bigPotatoes: 0, goldenBoard: 0 })
+    expect(s.orders).toEqual([])
+    expect(s.quests).toBeNull()
+    expect(s.leaderboard).toHaveLength(1)
+  })
+})
