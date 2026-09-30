@@ -2,11 +2,90 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Potato Cutter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Potato Cutter — simulateur 3D de découpe de patates en ligne (gratuit)</title>
+    <meta name="description" content="Potato Cutter : jeu gratuit en 3D dans le navigateur. Épluche et tranche des patates (rondelles, frites, dés), gagne des Patacoins, achète des couteaux rares, des patates, des décors et un mode ray tracing." />
+    <meta name="keywords" content="jeu patate, simulateur de découpe, éplucher patates, jeu 3D navigateur, three.js, jeu gratuit, ray tracing, cuisine" />
+    <meta name="author" content="Potato Cutter" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#e08a1e" />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href="__SITE_URL__/" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Potato Cutter" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="Potato Cutter — simulateur 3D de découpe de patates" />
+    <meta property="og:description" content="Épluche, tranche, encaisse : un jeu 3D gratuit avec couteaux rares, décors, chrono et mode ray tracing." />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:image" content="__SITE_URL__/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Une patate tranchée en rondelles sur un plan de travail en marbre, devant un mur de briques" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Potato Cutter — simulateur 3D de découpe de patates" />
+    <meta name="twitter:description" content="Épluche, tranche, encaisse : un jeu 3D gratuit avec couteaux rares, décors, chrono et mode ray tracing." />
+    <meta name="twitter:image" content="__SITE_URL__/og-image.jpg" />
+
+    <!-- textures lues en premier par la scène : préchargées pour un premier rendu plus rapide -->
+    <link rel="preload" as="image" href="/textures/wood_table_001_diff.webp" type="image/webp" fetchpriority="low" />
+    <link rel="preload" as="image" href="/textures/brown_mud_02_diff.webp" type="image/webp" fetchpriority="low" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Potato Cutter",
+        "alternateName": "Simulateur de découpe de patates",
+        "description": "Jeu 3D gratuit dans le navigateur : éplucher et trancher des patates, gagner des Patacoins, acheter des couteaux rares, des variétés de patates, des décors et des améliorations.",
+        "url": "__SITE_URL__/",
+        "image": "__SITE_URL__/og-image.jpg",
+        "inLanguage": "fr",
+        "genre": ["Simulation", "Casual", "Clicker"],
+        "applicationCategory": "Game",
+        "gamePlatform": "Navigateur web (WebGL 2)",
+        "operatingSystem": "Tous (navigateur moderne)",
+        "playMode": "SinglePlayer",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" }
+      }
+    </script>
+    <style>
+      /* écran de chargement : visible avant l'exécution du JS, remplacé par Vue au montage */
+      html, body { margin: 0; height: 100%; background: #f4e3c8; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #2b1d0e; }
+      .boot { min-height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; }
+      .boot h1 { font-size: clamp(1.8rem, 6vw, 3rem); margin: 0 0 8px; }
+      .boot p { max-width: 38rem; margin: 6px auto; line-height: 1.5; }
+      .boot ul { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; font-size: 0.95rem; }
+      .boot .spin { font-size: 3rem; animation: boot-spin 1.4s linear infinite; display: inline-block; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .boot .spin { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- contenu indexable avant hydratation du jeu -->
+      <main class="boot">
+        <div>
+          <div class="spin" aria-hidden="true">🥔</div>
+          <h1>Potato Cutter</h1>
+          <p>Simulateur 3D de découpe de patates, gratuit, dans ton navigateur. Épluche, tranche en rondelles, frites ou dés, gagne des Patacoins et achète des couteaux rares.</p>
+          <ul aria-label="Fonctionnalités">
+            <li>🔪 12 couteaux de 5 raretés</li>
+            <li>🥔 6 variétés de patates</li>
+            <li>🏠 décors : planches, murs, ambiances, objets</li>
+            <li>⏱ mode chrono et classement</li>
+            <li>📷 mode photo ray tracing</li>
+          </ul>
+          <p>Chargement du jeu 3D…</p>
+        </div>
+      </main>
+      <noscript><p>Potato Cutter est un jeu 3D (WebGL) : active JavaScript pour jouer.</p></noscript>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -3,14 +3,26 @@ import GameCanvas from './components/GameCanvas.vue'
 import HudBar from './components/hud/HudBar.vue'
 import PhaseActions from './components/hud/PhaseActions.vue'
 import MainMenu from './components/screens/MainMenu.vue'
-import ChallengeResult from './components/screens/ChallengeResult.vue'
-import CollectionView from './components/screens/CollectionView.vue'
 import ResultsPanel from './components/screens/ResultsPanel.vue'
-import SettingsPanel from './components/screens/SettingsPanel.vue'
-import ShopView from './components/screens/ShopView.vue'
+import { defineAsyncComponent, watch } from 'vue'
 import { useGameStore } from './stores/game'
 
+// écrans secondaires chargés à la demande (boutique 3D, collection, réglages, fin de chrono)
+const ShopView = defineAsyncComponent(() => import('./components/screens/ShopView.vue'))
+const CollectionView = defineAsyncComponent(() => import('./components/screens/CollectionView.vue'))
+const SettingsPanel = defineAsyncComponent(() => import('./components/screens/SettingsPanel.vue'))
+const ChallengeResult = defineAsyncComponent(() => import('./components/screens/ChallengeResult.vue'))
+
 const game = useGameStore()
+
+const TITLES: Record<string, string> = {
+  menu: 'Potato Cutter — simulateur 3D de découpe de patates en ligne (gratuit)',
+  game: 'En jeu · Potato Cutter',
+  shop: 'Boutique : couteaux, patates, décors · Potato Cutter',
+  collection: 'Collection et classement · Potato Cutter',
+  settings: 'Réglages · Potato Cutter',
+}
+watch(() => game.screen, (sc) => { document.title = TITLES[sc] ?? TITLES.menu }, { immediate: true })
 </script>
 
 <template>

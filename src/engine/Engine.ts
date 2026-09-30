@@ -21,8 +21,8 @@ import { autoPeelSpeed } from '../game/data/upgrades'
 import { radiusAt } from '../game/potato/potatoShape'
 import { PotatoMesh, type PotatoLook } from './potato/PotatoMesh'
 import { BOARD_TOP, Kitchen } from './scene/Kitchen'
-import { PostFx } from './fx/PostFx'
-import { PathTraceSession } from './fx/PathTraceSession'
+import type { PostFx } from './fx/PostFx'
+import type { PathTraceSession } from './fx/PathTraceSession'
 import { MeshPhysicalMaterial } from 'three'
 import type { Quality } from '../game/save/saveSchema'
 import { createEnvironment } from './scene/env'
@@ -49,7 +49,7 @@ export interface RoundOptions {
   autoPeelLevel?: number
 }
 
-export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef; quality?: Quality; decor?: string[] }
+export interface EngineOptions { adaptive?: boolean; pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef; quality?: Quality; decor?: string[] }
 
 /** rayon (rad) de l'éplucheur sur la patate : grande lame, épluche large */
 const PEEL_RADIUS = 0.32
@@ -112,6 +112,16 @@ export class Engine {
   private time = 0
   private photo: { session: PathTraceSession; restore: () => void; lastCam: Vector3; lastQuat: Quaternion; wantSave: boolean } | null = null
   private photoTick = 0
+  private fxToken = 0
+  private paused = false
+  private adaptive = false
+  private pixelCap = 2
+  private pixelNow = 1
+  private frameAcc = 0
+  private frameN = 0
+  private lastAdapt = 0
+  private kbX = 0
+  private disposed = false
   private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
   private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
   private readonly oilFx = new PeelParticles('#ffd27a', 0.05, 2)
@@ -131,10 +141,16 @@ export class Engine {
     this.knife = opts.knife
     this.reducedMotion = !!opts.reducedMotion
     this.renderer = new WebGLRenderer({ antialias: true })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.pixelRatioCap ?? 2))
+    this.pixelCap = opts.pixelRatioCap ?? 2
+    this.adaptive = !!opts.adaptive
+    this.pixelNow = Math.min(window.devicePixelRatio || 1, this.pixelCap)
+    this.renderer.setPixelRatio(this.pixelNow)
     this.renderer.shadowMap.enabled = true
     this.renderer.toneMapping = ACESFilmicToneMapping
     this.canvas = this.renderer.domElement
+    this.canvas.setAttribute('role', 'application')
+    this.canvas.setAttribute('aria-label', 'Plan de travail 3D : éplucher et trancher la patate (flèches gauche/droite pour placer le couteau, Entrée pour trancher)')
+    this.canvas.tabIndex = 0
     this.canvas.style.touchAction = 'none'
     this.canvas.style.display = 'block'
     container.appendChild(this.canvas)
@@ -285,21 +301,72 @@ export class Engine {
   /** Qualité graphique : low = rendu direct ; high/ultra = post-traitement (AO, bloom, tone mapping, SMAA, bokeh). */
   setQuality(q: Quality): void {
     this.quality = q
+    const token = ++this.fxToken
     this.fx?.dispose()
     this.fx = null
-    if (q === 'low') {
-      this.renderer.toneMapping = ACESFilmicToneMapping
-      this.renderer.toneMappingExposure = 1
-    } else {
-      this.renderer.toneMapping = NoToneMapping // fait par la chaîne de post-traitement
-      const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1
-      this.fx = new PostFx(this.renderer, this.scene, this.camera, q, w, h)
-      this.fx.setBloom(this.kitchen.mood.bloom)
+    this.renderer.toneMapping = ACESFilmicToneMapping // rendu direct tant que la chaîne de post-traitement n'est pas chargée
+    this.renderer.toneMappingExposure = 1
+    if (q !== 'low') {
+      // chunk séparé (postprocessing + n8ao ≈ 250 Ko) : chargé seulement en qualité élevée/ultra
+      void import('./fx/PostFx').then(({ PostFx }) => {
+        if (token !== this.fxToken || this.disposed) return
+        this.renderer.toneMapping = NoToneMapping // fait par la chaîne de post-traitement
+        const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1
+        this.fx = new PostFx(this.renderer, this.scene, this.camera, q, w, h)
+        this.fx.setBloom(this.kitchen.mood.bloom)
+      })
     }
     this.resize()
   }
 
   get currentQuality(): Quality { return this.quality }
+
+  /** Met le rendu en pause (écrans opaques : boutique, collection, réglages) : 0 % GPU. */
+  setPaused(v: boolean): void {
+    this.paused = v
+    if (!v) this.clock.getDelta() // évite un gros dt à la reprise
+  }
+
+  /** Résolution adaptative : baisse le pixel ratio si les images dépassent ~26 ms, le remonte si tout va bien. */
+  private adaptResolution(rawDt: number): void {
+    if (!this.adaptive || this.photo) return
+    this.frameAcc += rawDt
+    if (++this.frameN < 45) return
+    const avg = this.frameAcc / this.frameN
+    this.frameAcc = 0
+    this.frameN = 0
+    const now = performance.now()
+    if (now - this.lastAdapt < 1500) return
+    const max = Math.min(window.devicePixelRatio || 1, this.pixelCap)
+    let next = this.pixelNow
+    if (avg > 0.026) next = Math.max(0.6, this.pixelNow - 0.2)
+    else if (avg < 0.015) next = Math.min(max, this.pixelNow + 0.1)
+    if (Math.abs(next - this.pixelNow) > 0.01) {
+      this.pixelNow = next
+      this.lastAdapt = now
+      this.renderer.setPixelRatio(next)
+      this.resize()
+    }
+  }
+
+  /** Clavier : déplace le guide de coupe (pas de 0,06) — accessibilité sans souris. */
+  nudgeCut(dir: number): void {
+    if (this.mode !== 'cutting' || !this.plan || !this.bounds) return
+    const [min, max] = this.bounds[this.plan.currentAxis ?? 'x']
+    this.kbX = Math.min(max - 0.05, Math.max(min + 0.05, this.kbX + dir * 0.06))
+    this.guide.visible = true
+    this.guide.position.x = this.potatoGroup.position.x + this.kbX
+    this.rig.hoverAt(this.guide.position.x)
+  }
+
+  /** Clavier : tranche à la position du guide (mêmes règles que la souris, y compris la précision du couteau). */
+  cutAtKeyboard(): void {
+    const axis = this.plan?.currentAxis
+    if (this.mode !== 'cutting' || !this.plan || !this.bounds || !axis) return
+    const pass = this.plan.mode.passes[this.plan.passIndex]
+    const ideals = idealPositions(this.bounds[axis][0], this.bounds[axis][1], pass.cuts)
+    this.cutAtLocal(axis, applyPrecision(this.kbX, ideals, this.knife.stats.precision))
+  }
 
   get photoActive(): boolean { return !!this.photo }
   get photoSamples(): number { return this.photo?.session.samples ?? 0 }
@@ -308,12 +375,16 @@ export class Engine {
    * Mode photo « ray tracing » : path tracing GPU progressif de la scène courante (éclairage global, reflets, ombres douces réelles).
    * Fige la partie ; orbite caméra autorisée ; `stopPhoto()` restaure le rendu temps réel.
    */
-  startPhoto(): boolean {
+  async startPhoto(): Promise<boolean> {
     if (this.photo) return true
-    if (!PathTraceSession.supported(this.renderer)) {
+    const supported = this.renderer.capabilities.isWebGL2 && this.renderer.extensions.has('EXT_color_buffer_float')
+    if (!supported) {
       this.events.emit('photo', { active: false, samples: 0, compiling: false, error: 'Ray tracing indisponible sur ce GPU (WebGL2 + float requis)' })
       return false
     }
+    // chunk séparé (three-gpu-pathtracer + three-mesh-bvh) : chargé à la première utilisation
+    const { PathTraceSession } = await import('./fx/PathTraceSession')
+    if (this.photo || this.disposed) return !!this.photo
     const undo: (() => void)[] = []
     const hide = (o: { visible: boolean }) => { const v = o.visible; o.visible = false; undo.push(() => { o.visible = v }) }
     ;[this.particles.points, this.juice.points, this.coins.points, this.oilFx.points, this.guide, this.peeler.group, this.strips.mesh].forEach(hide)
@@ -377,7 +448,11 @@ export class Engine {
 
   setSettings(s: { pixelRatioCap?: number; reducedMotion?: boolean }): void {
     if (s.reducedMotion !== undefined) this.reducedMotion = s.reducedMotion
-    if (s.pixelRatioCap !== undefined) this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, s.pixelRatioCap))
+    if (s.pixelRatioCap !== undefined) {
+      this.pixelCap = s.pixelRatioCap
+      this.pixelNow = Math.min(window.devicePixelRatio || 1, this.pixelCap)
+      this.renderer.setPixelRatio(this.pixelNow)
+    }
     this.resize()
   }
 
@@ -645,6 +720,8 @@ export class Engine {
   private readonly tick = (): void => {
     const raw = this.clock.getDelta()
     const dt = Math.min(0.05, raw)
+    if (this.paused) return
+    this.adaptResolution(raw)
     this.frames++
     if (this.photo) {
       this.tickPhoto()
@@ -681,6 +758,7 @@ export class Engine {
   }
 
   dispose(): void {
+    this.disposed = true
     this.renderer.setAnimationLoop(null)
     this.resizeObs.disconnect()
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost)

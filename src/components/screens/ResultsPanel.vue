@@ -17,7 +17,7 @@ watch(() => game.resultsVisible && game.phase === 'results', (show) => {
 </script>
 
 <template>
-  <div v-if="r && game.phase === 'results' && game.resultsVisible" class="results" data-testid="results">
+  <div v-if="r && game.phase === 'results' && game.resultsVisible" class="results" data-testid="results" role="dialog" aria-live="polite" :aria-label="`Patate terminée, note ${r.grade}, ${r.reward} Patacoins`">
     <div class="panel card">
       <h2>Patate terminée !</h2>
       <div class="grade" :data-grade="r.grade">{{ r.grade }}</div>
@@ -31,7 +31,7 @@ watch(() => game.resultsVisible && game.phase === 'results', (show) => {
       <p class="gain" data-testid="reward">+ {{ fmt.format(r.reward) }} 🥔</p>
       <p v-if="game.round?.order" class="order" data-testid="order-delivered">🍽 {{ game.round.order.label }} livré : + {{ fmt.format(game.round.order.bonus) }} 🥔</p>
       <div class="row">
-        <button class="big" data-testid="next" @click="again">Patate suivante</button>
+        <button class="big" data-testid="next" autofocus @click="again">Patate suivante</button>
         <button class="ghost" @click="game.backToMenu()">Menu</button>
       </div>
     </div>

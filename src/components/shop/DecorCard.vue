@@ -16,8 +16,8 @@ const EMOJI: Record<PropKind, string> = { plant: '🪴', plates: '🍽️', spic
 
 const preview = computed(() => {
   const d = props.decor
-  if (d.board) return d.board.tex ? `${base}decor/${d.board.tex}_diff.jpg` : `${base}textures/wood_table_001_diff.jpg`
-  if (d.wall) return `${base}decor/${d.wall.tex}_diff.jpg`
+  if (d.board) return d.board.tex ? `${base}decor/${d.board.tex}_diff.webp` : `${base}textures/wood_table_001_diff.webp`
+  if (d.wall) return `${base}decor/${d.wall.tex}_diff.webp`
   return null
 })
 const moodStyle = computed(() => {

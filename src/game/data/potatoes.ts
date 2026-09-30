@@ -22,7 +22,7 @@ export interface PotatoKind {
 
 export const POTATOES: PotatoKind[] = [
   { id: 'bintje', name: 'Bintje', description: 'La patate classique.', valueMult: 1, price: 0,
-    radiiMult: [1, 1, 1], skinTint: [2.5, 1.85, 1.05], flesh: [0.72, 0.6, 0.3], skinPiece: [0.18, 0.1, 0.04] },
+    radiiMult: [1, 1, 1], skinTint: [2.5, 1.85, 1.05], flesh: [0.8, 0.62, 0.2], skinPiece: [0.18, 0.1, 0.04] },
   { id: 'ratte', name: 'Ratte', description: 'Fine et allongée, chair jaune et fondante.', valueMult: 1.35, price: 300,
     radiiMult: [1.15, 0.72, 0.72], skinTint: [2.7, 2.1, 1.3], flesh: [0.75, 0.62, 0.28], skinPiece: [0.2, 0.12, 0.05] },
   { id: 'rouge', name: 'Désirée', description: 'Peau rouge, chair crème.', valueMult: 1.7, price: 900,

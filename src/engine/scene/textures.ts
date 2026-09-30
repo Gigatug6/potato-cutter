@@ -72,12 +72,12 @@ export function loadTextures(renderer: WebGLRenderer): SceneTextures {
     return t
   }
   cache = {
-    woodDiff: load('wood_table_001_diff.jpg', true, 2, 1.3),
-    woodNor: load('wood_table_001_nor.jpg', false, 2, 1.3),
-    skinDiff: load('brown_mud_02_diff.jpg', true, 3, 2),
-    skinNor: load('brown_mud_02_nor.jpg', false, 3, 2),
-    metalDiff: load('metal_diff.jpg', true, 1, 1),
-    metalNor: load('metal_nor.jpg', false, 1, 1),
+    woodDiff: load('wood_table_001_diff.webp', true, 2, 1.3),
+    woodNor: load('wood_table_001_nor.webp', false, 2, 1.3),
+    skinDiff: load('brown_mud_02_diff.webp', true, 3, 2),
+    skinNor: load('brown_mud_02_nor.webp', false, 3, 2),
+    metalDiff: load('metal_diff.webp', true, 1, 1),
+    metalNor: load('metal_nor.webp', false, 1, 1),
     flesh: createFleshTexture(),
   }
   return cache

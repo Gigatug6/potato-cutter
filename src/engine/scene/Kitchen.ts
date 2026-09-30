@@ -78,7 +78,7 @@ export class Kitchen {
     const key = `${name}:${file}:${repeat.join('x')}`
     let t = this.texCache.get(key)
     if (!t) {
-      t = this.loader.load(`${import.meta.env.BASE_URL}decor/${name}_${file}.jpg`)
+      t = this.loader.load(`${import.meta.env.BASE_URL}decor/${name}_${file}.webp`)
       t.wrapS = t.wrapT = RepeatWrapping
       t.repeat.set(repeat[0], repeat[1])
       t.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy())

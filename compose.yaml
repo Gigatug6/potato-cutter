@@ -32,6 +32,7 @@ services:
     environment:
       HOME: /tmp
       CI: "1"
+      MAKE_OG: "${MAKE_OG:-}"
       BASE_URL: "http://vite:5173"
     volumes:
       - .:/app
@@ -40,5 +41,15 @@ services:
       app:
         condition: service_healthy
     command: npx playwright test
+  web:
+    profiles: [prod]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+      args:
+        SITE_URL: "${SITE_URL:-http://localhost:8080}"
+    image: potato-cutter-prod
+    ports:
+      - "8080:80"
 volumes:
   node_modules:

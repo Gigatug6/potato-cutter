@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test'
+import { api, open, state } from './helpers'
+
+test('clavier : flèches pour placer le couteau, Entrée pour trancher', async ({ page }) => {
+  const errors = await open(page)
+  await api(page, 'startRound', 'rondelles', 42)
+  await page.waitForFunction(() => (window as any).__potato.getState().frames > 4)
+  await api(page, 'peelAll')
+  await api(page, 'goToCutting')
+  await page.waitForTimeout(800)
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  expect((await state(page)).cutCount).toBe(1)
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('Space')
+  await page.waitForTimeout(300)
+  expect((await state(page)).cutCount).toBe(2)
+  expect(errors).toEqual([])
+})
+
+test('SEO : titre, description, canonical, Open Graph, JSON-LD, manifest', async ({ page, request }) => {
+  await page.goto('/')
+  await expect(page).toHaveTitle(/Potato Cutter/)
+  expect(await page.locator('meta[name=description]').getAttribute('content')).toContain('patates')
+  expect(await page.locator('link[rel=canonical]').getAttribute('href')).toMatch(/^https?:\/\/.+\/$/)
+  expect(await page.locator('meta[property="og:image"]').getAttribute('content')).toMatch(/og-image\.jpg$/)
+  const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent() ?? '{}')
+  expect(ld['@type']).toBe('VideoGame')
+  const manifest = await request.get('/manifest.webmanifest')
+  expect((await manifest.json()).name).toContain('Potato Cutter')
+  expect((await request.get('/og-image.jpg')).ok()).toBe(true)
+  expect((await request.get('/icons/icon-512.png')).ok()).toBe(true)
+  await page.waitForFunction(() => (window as any).__potato)
+  await page.getByTestId('nav-shop').click()
+  await expect(page).toHaveTitle(/Boutique/)
+})

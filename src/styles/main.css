@@ -1,5 +1,5 @@
 :root {
-  --ink: #2b1d0e; --paper: #fff8ea; --accent: #e08a1e; --accent-2: #b55d0a; --ok: #2e9e4f; --bad: #c0392b;
+  --ink: #2b1d0e; --paper: #fff8ea; --accent: #a85800; --accent-2: #6f3a00; --ok: #1d7a38; --bad: #b3261e;
   --panel: rgba(255, 248, 234, 0.94); --shadow: 0 6px 20px rgba(60, 35, 10, 0.25);
 }
 * { box-sizing: border-box; }
@@ -21,3 +21,7 @@ h1, h2, h3 { margin: 0 0 8px; }
   .grid { grid-template-columns: 1fr; }
   button.big { font-size: 1.05rem; padding: 12px 18px; }
 }
+
+:focus-visible { outline: 3px solid #2457d6; outline-offset: 2px; }
+canvas:focus-visible { outline-offset: -4px; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }

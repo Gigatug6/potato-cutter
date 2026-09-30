@@ -26,13 +26,23 @@ const profile = useProfileStore()
 let engine: Engine | null = null
 const offs: (() => void)[] = []
 
+// Le menu s'affiche d'abord ; la scène 3D (textures, HDRI, shaders) s'initialise ensuite, hors du chemin critique.
 onMounted(() => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(init, { timeout: 700 })
+    else setTimeout(init, 50)
+  }))
+})
+
+function init() {
+  if (engine || !host.value) return
   setSoundEnabled(profile.settings.sound)
   engine = markRaw(new Engine(host.value!, {
     knife: profile.equippedKnife,
     pixelRatioCap: profile.settings.pixelRatioCap,
     reducedMotion: profile.settings.reducedMotion,
     quality: effectiveQuality(profile.settings.quality),
+    adaptive: !navigator.webdriver, // les tests automatisés gardent une résolution stable
     decor: profile.decorEquipped,
   }))
   engineRef.current = engine
@@ -57,7 +67,8 @@ onMounted(() => {
     if (r && !r.result && game.phase === 'peeling') launch(r)
   }
   startIfNeeded()
-})
+  window.addEventListener('keydown', onKey)
+}
 
 watch(() => game.round, (r) => {
   if (r && engine && !r.result && game.phase === 'peeling') launch(r)
@@ -65,6 +76,8 @@ watch(() => game.round, (r) => {
 watch(() => game.challenge, (c) => engine?.setSkipFry(!!c))
 watch(() => game.rotateMode, (v) => engine?.setRotateMode(v))
 watch(() => game.phase, (p) => { if (p === 'cutting') engine?.beginCutting() })
+// écrans opaques : on coupe le rendu 3D (économie GPU/batterie)
+watch(() => game.screen, (sc) => engine?.setPaused(sc === 'shop' || sc === 'collection' || sc === 'settings'))
 watch(() => profile.settings.quality, (q) => engine?.setQuality(effectiveQuality(q)))
 watch(() => [...profile.decorEquipped], (ids) => engine?.setDecor(ids))
 watch(() => profile.settings.sound, (v) => setSoundEnabled(v))
@@ -82,13 +95,23 @@ function launch(r: NonNullable<typeof game.round>) {
   })
 }
 
-const rtStart = () => { engine?.startPhoto() }
+const rtStart = () => { void engine?.startPhoto() }
 const rtSave = () => { engine?.savePhoto() }
 const rtStop = () => { engine?.stopPhoto() }
 
 const reload = () => window.location.reload()
 
+// clavier : ←/→ placent le couteau, Entrée/Espace tranchent
+function onKey(e: KeyboardEvent) {
+  if (game.phase !== 'cutting' || game.screen !== 'game') return
+  if (e.target instanceof HTMLElement && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName) && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  if (e.key === 'ArrowLeft') { engine?.nudgeCut(-1); e.preventDefault() }
+  else if (e.key === 'ArrowRight') { engine?.nudgeCut(1); e.preventDefault() }
+  else if (e.key === 'Enter' || e.key === ' ') { engine?.cutAtKeyboard(); e.preventDefault() }
+}
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
   offs.forEach((f) => f())
   engine?.dispose()
   engineRef.current = null

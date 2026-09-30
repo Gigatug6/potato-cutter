@@ -1,4 +1,7 @@
-.PHONY: init build install dev up down logs check typecheck test e2e sh npm clean
+prod:       ## build de production + nginx sur http://localhost:8080 (SITE_URL=https://... pour le SEO)
+	docker compose --profile prod up -d --build web
+
+.PHONY: prod init build install dev up down logs check typecheck test e2e sh npm clean
 
 init:       ## génère .env (UID/GID) et build l'image
 	./scripts/init-env.sh

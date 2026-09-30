@@ -134,3 +134,16 @@
 
 ### 2026-09-30 — Éplucheur aligné
 - L'éplucheur se pose à plat sur la surface (axe haut = normale du triangle touché) et son manche traîne derrière le sens du mouvement (lissé par slerp) ; valable aussi pour l'éplucheur automatique. Captures relues (dessus, flanc, bord droit).
+
+### 2026-09-30 — Phase 8 : SEO, performance, accessibilité
+- **Bundle** : 1 327 Ko (434 Ko gzip) → ~780 Ko au chargement (three 619 + vue 73 + app 90) ; post-traitement (335 Ko) et path tracer (203 Ko) en chunks chargés à la demande ; écrans boutique/collection/réglages/fin de chrono lazy.
+- **Assets** : textures JPEG → WebP (10,9 Mo → 1,2 Mo, `scripts/optimize-assets.mjs`), texture WebP ; HDRI chargé uniquement pour l'ambiance active ; service worker (`public/sw.js`) : cache d'abord sur les fichiers hachés, stale-while-revalidate sur les médias, jeu relançable hors-ligne.
+- **Runtime** : init de la scène 3D différée après le premier rendu du menu (LCP 10,8 s → 3,3 s en simulation) ; rendu en pause sur les écrans opaques ; résolution adaptative (pixel ratio 0,6–max selon le temps d'image) ; chargement paresseux de PostFx/PathTrace.
+- **SEO** : title/description/keywords, canonical, Open Graph + Twitter Card (image 1200×630 issue d'une vraie capture : `e2e/tools/og.spec.ts`), JSON-LD `VideoGame`, `robots.txt` + `sitemap.xml` générés au build (`SITE_URL`), manifest PWA + icônes, contenu HTML indexable pré-rendu dans `#app`, titre dynamique par écran.
+- **Production** : `make prod` (nginx : gzip, cache immuable sur /assets, CSP + en-têtes de sécurité, SPA fallback), `SITE_URL=https://… make prod`.
+- **Accessibilité** : contraste corrigé, focus visible, canvas focusable (`role=application`), **coupe au clavier** (←/→ + Entrée/Espace), résultats annoncés (dialog aria-live), `prefers-reduced-motion`.
+- **Lighthouse (mobile simulé, WebGL logiciel)** : SEO 100, accessibilité 100, bonnes pratiques 78 (seulement « HTTPS » : build servi en http local), performance 39 → 58 (TBT élevé = rendu logiciel SwiftShader, non représentatif d'un vrai GPU).
+- Chair de patate réchauffée (jaune crème) + sheen retiré ; 100 tests unitaires + 24 e2e verts.
+
+## Idées d'améliorations restantes
+Musique et ambiance sonore ; traduction EN (i18n) ; succès/trophées ; sauvegarde cloud ; partage de captures ; manette ; animations d'accueil ; mode « commande de restaurant » avec client animé ; KTX2/Basis pour les textures GPU ; `renderer.compileAsync` (quand l'extension parallèle est dispo) ; hébergement CDN + Brotli.

@@ -4,7 +4,7 @@ import { isInside, type PotatoShape, type Vec3 } from '../potato/potatoShape'
 import type { Cell } from './cutPlan'
 
 // valeurs linéaires (three interprète les couleurs de sommets en linéaire) : ~ sRGB (232,204,125) et (117,89,56)
-export const FLESH: Vec3 = [0.72, 0.60, 0.30]
+export const FLESH: Vec3 = [0.80, 0.62, 0.20]
 export const SKIN: Vec3 = [0.18, 0.10, 0.04]
 const STEP = 0.06
 const SAMPLES = 5
