@@ -443,13 +443,15 @@ export class Engine {
     this.raycaster.setFromCamera(this.pointer, this.camera)
   }
 
-  private hitPotato(): { dir: Vec3; world: Vector3 } | null {
+  private hitPotato(): { dir: Vec3; world: Vector3; normal: Vector3 } | null {
     if (!this.potato) return null
     const hit = this.raycaster.intersectObject(this.potato.mesh, false)[0]
     if (!hit) return null
     const local = this.potatoGroup.worldToLocal(hit.point.clone())
     const l = local.length() || 1
-    return { dir: [local.x / l, local.y / l, local.z / l], world: hit.point }
+    // normale de la surface, en repère monde (la lame doit s'y poser à plat)
+    const normal = (hit.face ? hit.face.normal.clone() : local.clone().normalize()).transformDirection(this.potato.mesh.matrixWorld)
+    return { dir: [local.x / l, local.y / l, local.z / l], world: hit.point, normal }
   }
 
   /** x monde du pointeur sur le plan horizontal de la patate. */
@@ -508,7 +510,7 @@ export class Engine {
     } else if (this.mode === 'peeling') {
       const h = this.hitPotato()
       this.hoverPeeler = !!h
-      if (h) this.peeler.placeAt(h.world, false)
+      if (h) this.peeler.placeAt(h.world, h.normal, false)
     } else if (this.mode === 'cutting') {
       const x = this.cutWorldX()
       if (x !== null && this.plan) {
@@ -547,11 +549,11 @@ export class Engine {
     }
   }
 
-  private peelAt(h: { dir: Vec3; world: Vector3 }): void {
+  private peelAt(h: { dir: Vec3; world: Vector3; normal: Vector3 }): void {
     const radius = PEEL_RADIUS * Math.sqrt(this.knife.stats.speed)
     const added = this.lastDir ? this.peel.paintStroke(this.lastDir, h.dir, radius) : this.peel.paint(h.dir, radius)
     this.lastDir = h.dir
-    this.peeler.placeAt(h.world, true)
+    this.peeler.placeAt(h.world, h.normal, true)
     if (added > 0) {
       this.potato?.refresh()
       this.particles.emit(h.world, 2)
@@ -599,7 +601,7 @@ export class Engine {
     this.autoLast = dir
     const r = radiusAt(this.shape, dir) * 1.12
     const world = this.potatoGroup.localToWorld(new Vector3(dir[0] * r, dir[1] * r, dir[2] * r))
-    this.peeler.placeAt(world, true)
+    this.peeler.placeAt(world, world.clone().sub(this.potatoGroup.position).normalize(), true)
     if (added > 0) {
       this.autoAcc += dt
       if (this.autoAcc > 0.08) {

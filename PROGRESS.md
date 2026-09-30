@@ -131,3 +131,6 @@
 - Ray tracing : mode photo 📷 = path tracing GPU progressif (three-gpu-pathtracer 0.0.23, WebGL2) : éclairage global, reflets, ombres douces ; orbite caméra autorisée ; export PNG ; retour au temps réel. Particularités : pas de shaders custom en PT (couleurs peau/chair cuites dans les sommets), couleurs de sommet RGBA obligatoires, `dispose()` de la lib cassé (libération manuelle).
 - Limite : le bruit « maze/points » des captures vient du rendu logiciel (SwiftShader) ; à valider sur un vrai GPU.
 - 100 tests unitaires + 22 e2e verts.
+
+### 2026-09-30 — Éplucheur aligné
+- L'éplucheur se pose à plat sur la surface (axe haut = normale du triangle touché) et son manche traîne derrière le sens du mouvement (lissé par slerp) ; valable aussi pour l'éplucheur automatique. Captures relues (dessus, flanc, bord droit).
