@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : 2 — Stores
-- **Prochaine étape : 2.1 stores Pinia profile + persist** (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : 3 — Moteur 3D
+- **Prochaine étape : 3.1 Engine + Kitchen + GameCanvas** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -22,8 +22,8 @@
 - [x] 1.8 save
 - [x] 1.9 crate
 ### Phase 2 — Stores
-- [ ] 2.1 profile + persist
-- [ ] 2.2 game
+- [x] 2.1 profile + persist
+- [x] 2.2 game
 ### Phase 3 — Moteur 3D
 - [ ] 3.1 Engine + Kitchen
 - [ ] 3.2 PotatoMesh
@@ -62,3 +62,6 @@
 
 ### 2026-09-30 — Phase 1 complète
 - Domaine pur : 45 tests verts, build OK. pieceGeometry < 2 s pour le mode dés en test.
+
+### 2026-09-30 — Phase 2
+- Stores profile/game/persist, 52 tests verts.
