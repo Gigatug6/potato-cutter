@@ -66,3 +66,20 @@ describe('parseSave — phase 6', () => {
     expect(s.leaderboard).toHaveLength(1)
   })
 })
+
+describe('parseSave — décors et qualité', () => {
+  it('défauts pour une ancienne sauvegarde', () => {
+    const s = parseSave({ version: 1 })
+    expect(s.decorEquipped.sort()).toEqual(['board-wood', 'mood-studio', 'wall-plaster'])
+    expect(s.settings.quality).toBe('high')
+  })
+  it('répare décors invalides et qualité inconnue', () => {
+    const s = parseSave({ version: 1, decorOwned: ['board-marble', 'zzz'], decorEquipped: ['board-marble', 'mood-night'], settings: { quality: 'ultra' } })
+    expect(s.decorOwned).toContain('board-marble')
+    expect(s.decorOwned).not.toContain('zzz')
+    expect(s.decorEquipped).toContain('board-marble')
+    expect(s.decorEquipped).not.toContain('mood-night') // non possédé
+    expect(s.settings.quality).toBe('ultra')
+    expect(parseSave({ version: 1, settings: { quality: 'wat' } }).settings.quality).toBe('high')
+  })
+})

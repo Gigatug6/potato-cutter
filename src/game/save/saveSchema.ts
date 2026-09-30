@@ -2,9 +2,13 @@ import { KNIVES, STARTER_KNIFE_ID } from '../data/knives'
 import type { CutModeId } from '../cutting/cutModes'
 import { ORDER_COUNT, type Order } from '../orders/orders'
 import { POTATOES, STARTER_POTATO_ID } from '../data/potatoes'
+import { DEFAULT_DECOR, decorById, sanitizeEquipped } from '../data/decor'
 import { UPGRADES } from '../data/upgrades'
 import type { QuestState } from '../quests/quests'
 import type { ScoreEntry } from '../scoring/leaderboard'
+
+export type Quality = 'low' | 'high' | 'ultra'
+export const QUALITIES: Quality[] = ['low', 'high', 'ultra']
 
 export interface SaveV1 {
   version: 1
@@ -18,7 +22,7 @@ export interface SaveV1 {
     bestTimeMs: Record<CutModeId, number | null>
     streak: number
   }
-  settings: { sound: boolean; reducedMotion: boolean; pixelRatioCap: number }
+  settings: { sound: boolean; reducedMotion: boolean; pixelRatioCap: number; quality: Quality }
   // ajouts phase 6 (tous optionnels dans les anciennes sauvegardes, réparés par parseSave)
   unlockedPotatoes: string[]
   selectedPotatoId: string
@@ -26,6 +30,8 @@ export interface SaveV1 {
   orders: Order[]
   quests: QuestState | null
   leaderboard: ScoreEntry[]
+  decorOwned: string[]
+  decorEquipped: string[]
 }
 
 const MODES: CutModeId[] = ['rondelles', 'frites', 'des']
@@ -41,13 +47,15 @@ export function defaultSave(): SaveV1 {
       bestGrade: { rondelles: null, frites: null, des: null },
       bestTimeMs: { rondelles: null, frites: null, des: null },
     },
-    settings: { sound: true, reducedMotion: false, pixelRatioCap: 2 },
+    settings: { sound: true, reducedMotion: false, pixelRatioCap: 2, quality: 'high' },
     unlockedPotatoes: [STARTER_POTATO_ID],
     selectedPotatoId: STARTER_POTATO_ID,
     upgrades: {},
     orders: [],
     quests: null,
     leaderboard: [],
+    decorOwned: [...DEFAULT_DECOR],
+    decorEquipped: [...DEFAULT_DECOR],
   }
 }
 
@@ -85,6 +93,7 @@ export function parseSave(raw: unknown): SaveV1 {
     s.settings.sound = typeof raw.settings.sound === 'boolean' ? raw.settings.sound : true
     s.settings.reducedMotion = typeof raw.settings.reducedMotion === 'boolean' ? raw.settings.reducedMotion : false
     s.settings.pixelRatioCap = num(raw.settings.pixelRatioCap, 2, 1, 3)
+    s.settings.quality = QUALITIES.includes(raw.settings.quality as Quality) ? (raw.settings.quality as Quality) : 'high'
   }
   const knownPotatoes = POTATOES.map((p) => p.id)
   if (Array.isArray(raw.unlockedPotatoes)) {
@@ -105,6 +114,11 @@ export function parseSave(raw: unknown): SaveV1 {
   if (Array.isArray(raw.leaderboard)) {
     s.leaderboard = raw.leaderboard.filter(validScore).sort((a, b) => b.score - a.score).slice(0, 10)
   }
+  const ownedDecor = Array.isArray(raw.decorOwned)
+    ? raw.decorOwned.filter((x): x is string => typeof x === 'string' && !!decorById(x))
+    : []
+  s.decorOwned = [...new Set([...DEFAULT_DECOR, ...ownedDecor])]
+  s.decorEquipped = sanitizeEquipped(raw.decorEquipped, s.decorOwned)
   return s
 }
 

@@ -11,8 +11,12 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "n8ao": "^2.0.1",
     "pinia": "^4.0.3",
+    "postprocessing": "^6.39.5",
     "three": "^0.186.1",
+    "three-gpu-pathtracer": "^0.0.23",
+    "three-mesh-bvh": "^0.9.15",
     "vue": "^3.5.43"
   },
   "devDependencies": {

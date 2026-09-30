@@ -4,6 +4,7 @@ import { createRng } from '../game/core/rng'
 import { CRATE_PRICE, KNIVES, STARTER_KNIFE_ID, knifeById, type KnifeDef } from '../game/data/knives'
 import { openCrate as rollCrate, type CrateResult } from '../game/economy/crate'
 import type { CutModeId } from '../game/cutting/cutModes'
+import { DEFAULT_DECOR, decorById, toggleEquip } from '../game/data/decor'
 import { POTATOES, STARTER_POTATO_ID, potatoById } from '../game/data/potatoes'
 import { upgradeById, upgradePrice, upgradeValueMult } from '../game/data/upgrades'
 import { ensureOrders, matchOrder, orderBonus, type Order } from '../game/orders/orders'
@@ -29,6 +30,8 @@ export const useProfileStore = defineStore('profile', () => {
   const orders = ref<Order[]>(s.orders)
   const quests = ref<QuestState | null>(s.quests)
   const leaderboard = ref<ScoreEntry[]>(s.leaderboard)
+  const decorOwned = ref<string[]>(s.decorOwned)
+  const decorEquipped = ref<string[]>(s.decorEquipped)
 
   const equippedKnife = computed<KnifeDef>(() => knifeById(equippedKnifeId.value) ?? KNIVES[0])
   const owns = (id: string): boolean => !!ownedKnives.value[id]
@@ -94,6 +97,28 @@ export const useProfileStore = defineStore('profile', () => {
     return true
   }
 
+  // ---------- décors ----------
+  const ownsDecor = (id: string): boolean => decorOwned.value.includes(id)
+  const isDecorEquipped = (id: string): boolean => decorEquipped.value.includes(id)
+
+  function buyDecor(id: string): BuyResult {
+    const d = decorById(id)
+    if (!d) return 'unknown'
+    if (ownsDecor(id)) return 'owned'
+    if (money.value < d.price) return 'poor'
+    money.value -= d.price
+    decorOwned.value = [...decorOwned.value, id]
+    decorEquipped.value = toggleEquip(decorEquipped.value, id) // équipé dès l'achat
+    return 'ok'
+  }
+
+  /** Équipe (ou, pour un objet, allume/éteint) un décor possédé. */
+  function equipDecor(id: string): boolean {
+    if (!ownsDecor(id)) return false
+    decorEquipped.value = toggleEquip(decorEquipped.value, id)
+    return true
+  }
+
   // ---------- améliorations ----------
   const upgradeLevel = (id: string): number => upgrades.value[id] ?? 0
   const valueMult = computed(() => selectedPotato.value.valueMult * upgradeValueMult(upgrades.value))
@@ -152,6 +177,7 @@ export const useProfileStore = defineStore('profile', () => {
       stats: stats.value, settings: settings.value,
       unlockedPotatoes: unlockedPotatoes.value, selectedPotatoId: selectedPotatoId.value, upgrades: upgrades.value,
       orders: orders.value, quests: quests.value, leaderboard: leaderboard.value,
+      decorOwned: decorOwned.value, decorEquipped: decorEquipped.value,
     }
   }
 
@@ -169,11 +195,13 @@ export const useProfileStore = defineStore('profile', () => {
     orders.value = []
     quests.value = null
     leaderboard.value = []
+    decorOwned.value = [...DEFAULT_DECOR]
+    decorEquipped.value = [...DEFAULT_DECOR]
     clearSave()
   }
 
   refreshOrders()
   refreshQuests()
 
-  return { unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
+  return { decorOwned, decorEquipped, ownsDecor, isDecorEquipped, buyDecor, equipDecor, unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
 })

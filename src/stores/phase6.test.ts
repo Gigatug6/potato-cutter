@@ -106,3 +106,32 @@ describe('game — phase 6', () => {
     expect(p.leaderboard).toHaveLength(1)
   })
 })
+
+describe('profile — décors', () => {
+  it('achat équipe automatiquement, remplace dans la catégorie, objets basculables', () => {
+    const p = useProfileStore()
+    expect(p.buyDecor('board-marble')).toBe('poor')
+    p.earn(10000)
+    expect(p.buyDecor('board-marble')).toBe('ok')
+    expect(p.isDecorEquipped('board-marble')).toBe(true)
+    expect(p.isDecorEquipped('board-wood')).toBe(false)
+    expect(p.buyDecor('board-marble')).toBe('owned')
+    expect(p.equipDecor('board-wood')).toBe(true)
+    expect(p.isDecorEquipped('board-marble')).toBe(false)
+    expect(p.equipDecor('mood-night')).toBe(false) // non possédé
+    p.buyDecor('prop-lamp')
+    expect(p.isDecorEquipped('prop-lamp')).toBe(true)
+    p.equipDecor('prop-lamp')
+    expect(p.isDecorEquipped('prop-lamp')).toBe(false)
+    expect(p.buyDecor('nope')).toBe('unknown')
+  })
+  it('sauvegarde : les décors persistent', () => {
+    const p = useProfileStore()
+    p.earn(1000)
+    p.buyDecor('wall-brick')
+    const s = p.toSave()
+    expect(s.decorOwned).toContain('wall-brick')
+    expect(s.decorEquipped).toContain('wall-brick')
+    expect(s.decorEquipped).not.toContain('wall-plaster')
+  })
+})
