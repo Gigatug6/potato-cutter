@@ -45,7 +45,7 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
   const seg = (s: number) => Math.max(1, Math.ceil(s / STEP))
   const g = new BoxGeometry(size[0], size[1], size[2], seg(size[0]), seg(size[1]), seg(size[2]))
   const pos = g.getAttribute('position') as BufferAttribute
-  const col = new Float32Array(pos.count * 3)
+  const col = new Float32Array(pos.count * 4) // RGBA : le path tracer exige des couleurs de sommet à 4 composantes
   const peelAttr = new Float32Array(pos.count)
   const uv = new Float32Array(pos.count * 2)
   const nrm = g.getAttribute('normal') as BufferAttribute
@@ -74,7 +74,7 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
       const l = Math.hypot(p[0], p[1], p[2]) || 1
       c = peel.sample([p[0] / l, p[1] / l, p[2] / l]) ? colors.flesh : colors.skin
     }
-    col[v * 3] = c[0]; col[v * 3 + 1] = c[1]; col[v * 3 + 2] = c[2]
+    col[v * 4] = c[0]; col[v * 4 + 1] = c[1]; col[v * 4 + 2] = c[2]; col[v * 4 + 3] = 1
     peelAttr[v] = !outer || c === colors.flesh ? 1 : 0
     // UV planaires selon la face d'origine de la boîte, en coordonnées de la patate (continuité du grain entre pièces)
     const ax = Math.abs(nrm.getX(v)), ay = Math.abs(nrm.getY(v)), az = Math.abs(nrm.getZ(v))
@@ -83,7 +83,7 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
   }
   g.setAttribute('aPeel', new BufferAttribute(peelAttr, 1))
   g.setAttribute('uv', new BufferAttribute(uv, 2))
-  g.setAttribute('color', new BufferAttribute(col, 3))
+  g.setAttribute('color', new BufferAttribute(col, 4))
   g.computeVertexNormals()
   g.computeBoundingSphere()
   return { geometry: g, center, volume }

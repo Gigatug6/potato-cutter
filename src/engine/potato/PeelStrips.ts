@@ -1,6 +1,7 @@
 import {
-  DoubleSide, InstancedMesh, LinearSRGBColorSpace, MeshStandardMaterial, Object3D, PlaneGeometry, Vector3, type BufferAttribute,
+  DoubleSide, InstancedMesh, LinearSRGBColorSpace, Matrix4, Mesh, MeshStandardMaterial, Object3D, PlaneGeometry, Vector3, type BufferAttribute, type BufferGeometry,
 } from 'three'
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import type { Vec3 } from '../../game/potato/potatoShape'
 import { BOARD_TOP } from '../scene/Kitchen'
 import type { SceneTextures } from '../scene/textures'
@@ -92,6 +93,20 @@ export class PeelStrips {
       }
     }
     if (dirty) this.mesh.instanceMatrix.needsUpdate = true
+  }
+
+  /** Path tracing (pas d'instances) : fusionne les rubans posés/en vol en un seul maillage statique. */
+  toStaticMesh(): Mesh | null {
+    const parts: BufferGeometry[] = []
+    const m = new Matrix4()
+    for (let i = 0; i < this.mesh.count; i++) {
+      this.mesh.getMatrixAt(i, m)
+      parts.push(this.geo.clone().applyMatrix4(m))
+    }
+    if (!parts.length) return null
+    const merged = mergeGeometries(parts, false)
+    parts.forEach((g) => g.dispose())
+    return merged ? new Mesh(merged, this.mat) : null
   }
 
   dispose(): void {

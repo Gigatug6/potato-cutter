@@ -124,3 +124,10 @@
 - Rubans de peau (InstancedMesh, texture de peau) qui tombent et restent sur la planche jusqu'à la manche suivante.
 - Chair : texture procédurale (nuages, taches, cernes) mélangée à la peau par un shader partagé (patate entière + pièces, UV planaires continus) ; fini la couleur unie.
 - Pinceau d'épluchage agrandi (0,2 → 0,32 rad ; auto 0,28). 92 tests + 18 e2e verts.
+
+### 2026-09-30 — Phase 7 : « claque visuelle », ray tracing, décors achetables
+- Graphismes : HDRI Poly Haven (studio, jour, coucher de soleil, nuit), matériaux physiques (clearcoat, sheen), post-traitement (AO N8AO, bloom HDR, ACES, vignette, SMAA ; ultra : bokeh), qualité Basse/Élevée/Ultra (réglages ; `?fx=` dans l'URL ; Playwright reste en « low »).
+- Décors achetables (boutique → Décors) : 5 planches (bois, noyer, marbre, ardoise, parquet), 3 murs (crépi, briques, béton), 4 ambiances (studio, jour, coucher de soleil, nuit néon), 5 objets (plante, épices, assiettes, bougies vacillantes, suspension). Sauvegarde + tests.
+- Ray tracing : mode photo 📷 = path tracing GPU progressif (three-gpu-pathtracer 0.0.23, WebGL2) : éclairage global, reflets, ombres douces ; orbite caméra autorisée ; export PNG ; retour au temps réel. Particularités : pas de shaders custom en PT (couleurs peau/chair cuites dans les sommets), couleurs de sommet RGBA obligatoires, `dispose()` de la lib cassé (libération manuelle).
+- Limite : le bruit « maze/points » des captures vient du rendu logiciel (SwiftShader) ; à valider sur un vrai GPU.
+- 100 tests unitaires + 22 e2e verts.

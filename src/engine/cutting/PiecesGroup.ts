@@ -71,6 +71,15 @@ export class PiecesGroup {
     if (!list.length) this.flying.total = 0.3
   }
 
+  private rasterMat: MeshPhysicalMaterial | null = null
+
+  /** Path tracing : remplace temporairement le matériau de toutes les pièces (null = restaure). */
+  swapMaterial(mat: import('three').Material | null): void {
+    if (mat) this.rasterMat = this.material
+    for (const it of this.items.values()) it.mesh.material = mat ?? this.rasterMat ?? it.mesh.material
+    if (!mat) this.rasterMat = null
+  }
+
   cancelLaunch(): void {
     this.flying = null
   }

@@ -22,6 +22,8 @@ import { radiusAt } from '../game/potato/potatoShape'
 import { PotatoMesh, type PotatoLook } from './potato/PotatoMesh'
 import { BOARD_TOP, Kitchen } from './scene/Kitchen'
 import { PostFx } from './fx/PostFx'
+import { PathTraceSession } from './fx/PathTraceSession'
+import { MeshPhysicalMaterial } from 'three'
 import type { Quality } from '../game/save/saveSchema'
 import { createEnvironment } from './scene/env'
 import { loadTextures, type SceneTextures } from './scene/textures'
@@ -35,6 +37,7 @@ export interface EngineEvents extends Record<string, unknown> {
   finished: { bounds: Bounds; cuts: Cuts }
   contextLost: undefined
   fried: undefined
+  photo: { active: boolean; samples: number; compiling: boolean; error?: string }
 }
 
 export interface RoundOptions {
@@ -107,6 +110,8 @@ export class Engine {
   private fx: PostFx | null = null
   private quality: Quality = 'low'
   private time = 0
+  private photo: { session: PathTraceSession; restore: () => void; lastCam: Vector3; lastQuat: Quaternion; wantSave: boolean } | null = null
+  private photoTick = 0
   private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
   private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
   private readonly oilFx = new PeelParticles('#ffd27a', 0.05, 2)
@@ -296,6 +301,74 @@ export class Engine {
 
   get currentQuality(): Quality { return this.quality }
 
+  get photoActive(): boolean { return !!this.photo }
+  get photoSamples(): number { return this.photo?.session.samples ?? 0 }
+
+  /**
+   * Mode photo « ray tracing » : path tracing GPU progressif de la scène courante (éclairage global, reflets, ombres douces réelles).
+   * Fige la partie ; orbite caméra autorisée ; `stopPhoto()` restaure le rendu temps réel.
+   */
+  startPhoto(): boolean {
+    if (this.photo) return true
+    if (!PathTraceSession.supported(this.renderer)) {
+      this.events.emit('photo', { active: false, samples: 0, compiling: false, error: 'Ray tracing indisponible sur ce GPU (WebGL2 + float requis)' })
+      return false
+    }
+    const undo: (() => void)[] = []
+    const hide = (o: { visible: boolean }) => { const v = o.visible; o.visible = false; undo.push(() => { o.visible = v }) }
+    ;[this.particles.points, this.juice.points, this.coins.points, this.oilFx.points, this.guide, this.peeler.group, this.strips.mesh].forEach(hide)
+
+    const potatoVisible = this.potato?.mesh.visible
+    if (potatoVisible) { this.potato!.enterPathTrace(); undo.push(() => this.potato?.exitPathTrace()) }
+    if (this.pieces.count) {
+      const mat = new MeshPhysicalMaterial({ vertexColors: true, map: this.tex.flesh, roughness: 0.6, clearcoat: 0.15, clearcoatRoughness: 0.45 })
+      this.pieces.swapMaterial(mat)
+      undo.push(() => { this.pieces.swapMaterial(null); mat.dispose() })
+    }
+    const staticStrips = this.strips.toStaticMesh()
+    if (staticStrips) {
+      this.scene.add(staticStrips)
+      undo.push(() => { this.scene.remove(staticStrips); staticStrips.geometry.dispose() })
+    }
+    const prevEnv = this.scene.environment
+    if (this.kitchen.equirect) this.scene.environment = this.kitchen.equirect
+    undo.push(() => { this.scene.environment = prevEnv })
+    const prevTone = this.renderer.toneMapping
+    this.renderer.toneMapping = ACESFilmicToneMapping
+    undo.push(() => { this.renderer.toneMapping = prevTone })
+    const prevEnabled = this.controls.enabled
+    this.controls.enabled = true
+    undo.push(() => { this.controls.enabled = prevEnabled && this.mode === 'peeling' })
+
+    try {
+      const scale = this.quality === 'ultra' ? 0.9 : 0.6
+      const session = new PathTraceSession(this.renderer, this.scene, this.camera, { scale, bounces: this.quality === 'ultra' ? 7 : 5 })
+      this.photo = { session, restore: () => undo.reverse().forEach((f) => f()), lastCam: this.camera.position.clone(), lastQuat: this.camera.quaternion.clone(), wantSave: false }
+      this.events.emit('photo', { active: true, samples: 0, compiling: true })
+      return true
+    } catch (e) {
+      undo.reverse().forEach((f) => f())
+      this.events.emit('photo', { active: false, samples: 0, compiling: false, error: `Ray tracing : ${(e as Error).message}` })
+      return false
+    }
+  }
+
+  stopPhoto(): void {
+    const p = this.photo
+    if (!p) return
+    this.photo = null
+    p.session.dispose()
+    p.restore()
+    this.renderer.setRenderTarget(null)
+    this.resize()
+    this.events.emit('photo', { active: false, samples: 0, compiling: false })
+  }
+
+  /** Télécharge l'image path-tracée courante (PNG). */
+  savePhoto(): void {
+    if (this.photo) this.photo.wantSave = true
+  }
+
   /** Décors équipés (planche, mur, ambiance, objets). */
   setDecor(ids: string[]): void {
     this.kitchen.apply(ids)
@@ -397,6 +470,7 @@ export class Engine {
   private readonly onContext = (e: Event): void => e.preventDefault()
 
   private readonly onDown = (e: PointerEvent): void => {
+    if (this.photo) return
     this.downAt.set(e.clientX, e.clientY)
     if (this.mode !== 'peeling') return
     if (this.rotateMode || e.button === 2 || e.shiftKey) {
@@ -416,6 +490,7 @@ export class Engine {
   }
 
   private readonly onMove = (e: PointerEvent): void => {
+    if (this.photo) return
     if (this.rotating) {
       const dx = e.clientX - this.lastRot.x, dy = e.clientY - this.lastRot.y
       this.lastRot.set(e.clientX, e.clientY)
@@ -447,6 +522,7 @@ export class Engine {
   }
 
   private readonly onUp = (e: PointerEvent): void => {
+    if (this.photo) return
     if (this.rotating) {
       this.rotating = false
       this.controls.enabled = this.mode === 'peeling'
@@ -548,10 +624,30 @@ export class Engine {
     if (this.mode !== 'idle') this.camTarget = this.fitted(this.camBase)
   }
 
+  private tickPhoto(): void {
+    const p = this.photo!
+    this.controls.update()
+    const moved = !p.lastCam.equals(this.camera.position) || !p.lastQuat.equals(this.camera.quaternion)
+    if (moved) { p.lastCam.copy(this.camera.position); p.lastQuat.copy(this.camera.quaternion) }
+    p.session.frame(moved)
+    if (p.wantSave) {
+      p.wantSave = false
+      const a = document.createElement('a')
+      a.href = this.canvas.toDataURL('image/png')
+      a.download = `potato-raytracing-${Date.now()}.png`
+      a.click()
+    }
+    if (++this.photoTick % 10 === 0) this.events.emit('photo', { active: true, samples: p.session.samples, compiling: p.session.compiling })
+  }
+
   private readonly tick = (): void => {
     const raw = this.clock.getDelta()
     const dt = Math.min(0.05, raw)
     this.frames++
+    if (this.photo) {
+      this.tickPhoto()
+      return
+    }
     this.potatoGroup.quaternion.slerp(this.targetQuat, 1 - Math.exp(-10 * dt))
     if (this.camTarget) {
       this.camera.position.lerp(this.camTarget, 1 - Math.exp(-6 * dt))
@@ -602,6 +698,7 @@ export class Engine {
     this.rig.dispose()
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()
+    this.stopPhoto()
     this.fx?.dispose()
     this.kitchen.dispose()
     this.env.dispose()

@@ -11,6 +11,7 @@ import { useProfileStore } from '../stores/profile'
 
 const host = ref<HTMLDivElement>()
 const lost = ref(false)
+const photo = ref({ active: false, samples: 0, compiling: false, error: '' })
 interface Floater { id: number; x: number; y: number; text: string; big: boolean }
 const floaters = ref<Floater[]>([])
 let floaterId = 0
@@ -42,6 +43,7 @@ onMounted(() => {
     ev.on('cutRejected', () => playError()),
     ev.on('fried', () => { game.resultsVisible = true; playSizzle() }),
     ev.on('contextLost', () => (lost.value = true)),
+    ev.on('photo', (p) => (photo.value = { active: p.active, samples: p.samples, compiling: p.compiling, error: p.error ?? '' })),
     ev.on('allCutsDone', () => engine?.finish()),
     ev.on('finished', ({ bounds, cuts }) => {
       const res = game.finishRound(bounds, cuts)
@@ -80,6 +82,10 @@ function launch(r: NonNullable<typeof game.round>) {
   })
 }
 
+const rtStart = () => { engine?.startPhoto() }
+const rtSave = () => { engine?.savePhoto() }
+const rtStop = () => { engine?.stopPhoto() }
+
 const reload = () => window.location.reload()
 
 onBeforeUnmount(() => {
@@ -95,6 +101,17 @@ onBeforeUnmount(() => {
   <div class="floaters">
     <span v-for="f in floaters" :key="f.id" class="floater" :class="{ big: f.big }" :style="{ left: f.x + 'px', top: f.y + 'px' }">{{ f.text }}</span>
   </div>
+  <div v-if="game.screen === 'game' && game.phase !== 'idle'" class="photo-ui">
+    <template v-if="!photo.active">
+      <button class="ghost rt" data-testid="rt-start" @click="rtStart">📷 Ray tracing</button>
+    </template>
+    <template v-else>
+      <span class="chip" data-testid="rt-status">{{ photo.compiling ? 'Compilation des shaders…' : `Path tracing : ${photo.samples} échantillons` }}</span>
+      <button class="ghost rt" data-testid="rt-save" @click="rtSave">💾 PNG</button>
+      <button class="rt" data-testid="rt-stop" @click="rtStop">Retour au jeu</button>
+    </template>
+    <span v-if="photo.error" class="chip err" data-testid="rt-error">{{ photo.error }}</span>
+  </div>
   <div v-if="lost" class="lost" data-testid="context-lost">
     <div class="panel">
       <h2>Affichage 3D perdu</h2>
@@ -106,6 +123,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .game-canvas { position: absolute; inset: 0; }
+.photo-ui { position: absolute; top: 56px; right: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; z-index: 3; }
+.rt { padding: 6px 10px; font-size: 0.85rem; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); border: 0; }
+.chip { background: var(--panel); padding: 6px 10px; border-radius: 999px; font-size: 0.82rem; box-shadow: var(--shadow); }
+.chip.err { color: var(--bad); }
 .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .floater { position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 1.4rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6); animation: rise 1.1s ease-out forwards; }
 .floater.big { font-size: 2.2rem; color: #ffd36a; }

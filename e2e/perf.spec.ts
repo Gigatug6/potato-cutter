@@ -4,6 +4,7 @@ import { api, open, state } from './helpers'
 test('5 manches enchaînées : pas de fuite GPU, pas d’erreur', async ({ page }) => {
   const errors = await open(page)
   const counts: number[] = []
+  const textures: number[] = []
   for (let round = 0; round < 5; round++) {
     await api(page, 'startRound', 'frites', 100) // même graine : le nombre de pièces est identique à chaque manche
     await page.waitForTimeout(300)
@@ -18,11 +19,11 @@ test('5 manches enchaînées : pas de fuite GPU, pas d’erreur', async ({ page 
     const s = await state(page)
     expect(s.phase).toBe('results')
     counts.push(s.geometries)
+    textures.push(s.textures)
   }
   // la 5e manche ne doit pas avoir plus de géométries que la 2e + marge (pas de fuite cumulée)
   expect(counts[4]).toBeLessThanOrEqual(counts[1] + 2)
-  const s = await state(page)
-  expect(s.textures).toBeLessThan(10)
+  expect(textures[4]).toBeLessThanOrEqual(textures[1] + 1) // pas de fuite de textures d'une manche à l'autre
   expect(errors).toEqual([])
 })
 

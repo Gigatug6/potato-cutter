@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial } from 'three'
+import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshPhysicalMaterial, type Material, type MeshStandardMaterial } from 'three'
 import type { SceneTextures } from '../scene/textures'
 import { createPotatoMaterial, type PotatoLook } from './potatoMaterial'
 
@@ -19,7 +19,13 @@ export class PotatoMesh {
   private readonly skin: Float32Array
   private readonly peelAttr: BufferAttribute
 
+  private readonly look: PotatoLook
+  private readonly tex: SceneTextures
+  private rasterMaterial: Material | null = null
+
   constructor(shape: PotatoShape, private readonly peel: PeelMap, tex: SceneTextures, look: PotatoLook) {
+    this.look = look
+    this.tex = tex
     const base = new IcosahedronGeometry(1, 20)
     base.rotateZ(Math.PI / 2) // pôles d'UV aux extrémités (axe long) plutôt que sur le dessus
     base.deleteAttribute('normal')
@@ -45,7 +51,8 @@ export class PotatoMesh {
       if (eye) tint.multiplyScalar(0.4)
       this.skin.set([tint.r, tint.g, tint.b], i * 3)
     }
-    this.geo.setAttribute('color', new BufferAttribute(new Float32Array(pos.count * 3), 3))
+    const colors = new Float32Array(pos.count * 4).fill(1) // RGBA (alpha = 1) : requis par le path tracer
+    this.geo.setAttribute('color', new BufferAttribute(colors, 4))
     this.peelAttr = new BufferAttribute(new Float32Array(pos.count), 1)
     this.geo.setAttribute('aPeel', this.peelAttr)
     const mat = createPotatoMaterial(tex, look, { vertexColors: true, normal: true, fleshScale: 1.6 })
@@ -72,6 +79,33 @@ export class PotatoMesh {
     this.peelAttr.needsUpdate = true
     this.geo.computeVertexNormals()
     this.geo.computeBoundingSphere()
+  }
+
+  /**
+   * Path tracing : le shader peau/chair n'est pas supporté, on cuit donc la couleur finale dans les sommets
+   * (peau brune variée / chair de la variété) + textures standard.
+   */
+  enterPathTrace(): void {
+    if (this.rasterMaterial) return
+    const col = this.geo.getAttribute('color') as BufferAttribute
+    const f = this.look.flesh, sk = this.look.skinPiece
+    for (let i = 0; i < this.dirs.length; i++) {
+      if (this.peel.sample(this.dirs[i])) col.setXYZ(i, f[0] * 0.68, f[1] * 0.68, f[2] * 0.68)
+      else col.setXYZ(i, sk[0] * 1.7 * this.skin[i * 3], sk[1] * 1.7 * this.skin[i * 3 + 1], sk[2] * 1.7 * this.skin[i * 3 + 2])
+    }
+    col.needsUpdate = true
+    this.rasterMaterial = this.mesh.material as Material
+    this.mesh.material = new MeshPhysicalMaterial({
+      vertexColors: true, roughness: 0.75, map: this.tex.flesh, normalMap: this.tex.skinNor, clearcoat: 0.15, clearcoatRoughness: 0.45,
+    })
+  }
+
+  exitPathTrace(): void {
+    if (!this.rasterMaterial) return
+    ;(this.mesh.material as MeshStandardMaterial).dispose()
+    this.mesh.material = this.rasterMaterial
+    this.rasterMaterial = null
+    this.refresh()
   }
 
   dispose(): void {
