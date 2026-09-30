@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test'
 
 export type PotatoState = {
   phase: string; screen: string; mode: string | null; peelCoverage: number; cutCount: number; pieceCount: number
+  seed: number | null; bad: string | null; challenge: { score: number; potatoes: number; done: boolean; rank: number | null } | null
   money: number; frames: number; drawCalls: number; triangles: number; geometries: number; textures: number
   result: { reward: number; grade: string } | null
 }

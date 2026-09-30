@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Prochaine étape : 6.4 UI (menu, boutique à onglets + aperçu 3D, classement, Jeter, chrono)** (commandes : `make check`, `make e2e`, `make dev`)
+- **Projet terminé (phase 6 incluse)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -46,8 +46,8 @@
 - [x] 6.1 Modules purs + schéma de sauvegarde : patates (1), commandes (2), améliorations (3), quêtes (6), classement (5), équilibrage (9)
 - [x] 6.2 Stores : profile étendu, game (chrono, commande livrée, patate pourrie, résultats différés)
 - [x] 6.3 Moteur : variétés de patates + patate pourrie/verte (8), améliorations (éplucheur auto, grosses patates), couteau visible qui suit le pointeur (4), friteuse (8), jus : particules, nombres flottants, sons (7)
-- [ ] 6.4 UI : choix de patate + commandes + quêtes + chrono au menu, boutique à onglets (couteaux/patates/améliorations) avec aperçu 3D rotatif (4), classement, bouton Jeter
-- [ ] 6.5 e2e des nouveautés + vérification finale
+- [x] 6.4 UI : choix de patate + commandes + quêtes + chrono au menu, boutique à onglets (couteaux/patates/améliorations) avec aperçu 3D rotatif (4), classement, bouton Jeter
+- [x] 6.5 e2e des nouveautés + vérification finale
 
 ## Décisions
 - D1 : three.js direct plutôt que TresJS (maillages impératifs).
@@ -110,3 +110,11 @@
 
 ### 2026-09-30 — 6.3 moteur
 - Variétés (teinte/chair par type), patates verte/pourrie, éplucheur auto (robot en spirale), grosses patates, couteau en survol qui suit le pointeur, friteuse (pièces en arc dans le bac), particules jus/pièces/huile, nombres flottants, sons (erreur, friture, achat). Captures relues : couteau visible, friteuse OK, patate verte OK, violette un peu trop claire (teinte assombrie).
+
+### 2026-09-30 — 6.4/6.5 UI + vérification
+- UI : choix de patate, commandes (bonus de plat livré), quêtes du jour (à récupérer), chrono 60 s enchaîné + classement local, boutique à onglets (couteaux avec aperçu 3D rotatif, patates, améliorations), bouton « Jeter » pour patate pourrie/verte, nombres flottants, sons d'achat.
+- 92 tests unitaires + 18 e2e verts. Corrections de tests mal conçus : perf (graine constante, sinon le nombre de pièces varie) ; shop (un doublon « rare » rembourse exactement le prix de la caisse, donc ≤ et non <) ; workers Playwright limités à 3 (WebGL logiciel).
+- Captures relues : menu (commandes + quêtes), patate verte, éplucheur robot, couteau en survol, friteuse. Aperçu boutique vérifié par e2e (canvas + nom).
+
+## Les 9 suggestions — où les trouver
+1. Variétés : `game/data/potatoes.ts`, boutique → Patates. 2. Plats : `game/orders/`. 3. Améliorations : `game/data/upgrades.ts`. 4. Aperçu 3D + couteau visible : `KnifePreview.vue`, `KnifeRig.ts`. 5. Chrono + classement : store `game` + `leaderboard.ts`. 6. Quêtes : `game/quests/`. 7. Jus : particules, flottants, sons. 8. Friteuse + patate pourrie/verte : `Kitchen.ts`, `PiecesGroup.launch`, `badKindForSeed`. 9. Équilibrage : gains de base 25/70/150.

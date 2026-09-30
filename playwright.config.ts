@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './artifacts/test-results',
   reporter: 'list',
+  workers: 3, // WebGL logiciel (swiftshader) : trop de workers ralentit tout
   timeout: 60_000,
   expect: { timeout: 10_000 },
   use: {

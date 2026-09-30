@@ -9,7 +9,12 @@ const game = useGameStore()
 const profile = useProfileStore()
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval>
-onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 250) })
+onMounted(() => {
+  timer = setInterval(() => {
+    now.value = Date.now()
+    game.tickChallenge(now.value)
+  }, 250)
+})
 onBeforeUnmount(() => clearInterval(timer))
 
 const elapsed = computed(() => {
@@ -20,6 +25,10 @@ const elapsed = computed(() => {
 })
 const peelPct = computed(() => Math.round((game.round?.peelCoverage ?? 0) * 100))
 const cutsLabel = computed(() => `${game.round?.cutCount ?? 0}/${game.targetCuts()}`)
+const challengeLeft = computed(() => {
+  const c = game.challenge
+  return c && !c.done ? Math.max(0, Math.ceil((c.endsAt - now.value) / 1000)) : null
+})
 const modeLabel = computed(() => (game.round ? CUT_MODES[game.round.mode].label : ''))
 </script>
 
@@ -27,6 +36,7 @@ const modeLabel = computed(() => (game.round ? CUT_MODES[game.round.mode].label 
   <header class="hud" data-testid="hud">
     <MoneyCounter />
     <div class="chip">{{ modeLabel }}</div>
+    <div v-if="challengeLeft !== null" class="chip challenge" data-testid="challenge-timer">⏳ {{ challengeLeft }} s · {{ game.challenge!.score }} 🥔 · {{ game.challenge!.potatoes }} patate(s)</div>
     <div class="chip" data-testid="timer">⏱ {{ elapsed }}</div>
     <div class="chip" data-testid="peel">Épluché {{ peelPct }} %</div>
     <div class="chip" data-testid="cuts">Coupes {{ cutsLabel }}</div>
@@ -37,6 +47,7 @@ const modeLabel = computed(() => (game.round ? CUT_MODES[game.round.mode].label 
 
 <style scoped>
 .hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.challenge { background: #6a3fb5; color: #fff; font-weight: 800; }
 .combo { background: #ffd36a; font-weight: 800; }
 .chip { background: var(--panel); padding: 6px 12px; border-radius: 999px; box-shadow: var(--shadow); font-size: 0.9rem; }
 @media (max-width: 600px) { .chip { padding: 4px 8px; font-size: 0.78rem; } }

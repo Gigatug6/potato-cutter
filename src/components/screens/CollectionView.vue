@@ -21,6 +21,15 @@ const secs = (ms: number | null) => (ms === null ? '—' : `${(ms / 1000).toFixe
         <li v-for="m in modes" :key="m.id">{{ m.label }} : meilleure note <b>{{ profile.stats.bestGrade[m.id] ?? '—' }}</b>, meilleur temps <b>{{ secs(profile.stats.bestTimeMs[m.id]) }}</b></li>
       </ul>
     </section>
+    <section class="panel stats" data-testid="leaderboard">
+      <h2>🏆 Classement chrono (local)</h2>
+      <ol v-if="profile.leaderboard.length">
+        <li v-for="(e, i) in profile.leaderboard" :key="i">
+          <b>{{ e.score }} 🥔</b> — {{ e.potatoes }} patate(s) · {{ e.mode }} · {{ e.date }}
+        </li>
+      </ol>
+      <p v-else>Aucun score. Lance un « Chrono 60 s » depuis le menu !</p>
+    </section>
     <h2 class="t">Couteaux ({{ Object.keys(profile.ownedKnives).length }}/{{ KNIVES.length }})</h2>
     <div class="grid">
       <article v-for="k in sorted" :key="k.id" class="panel k" :class="{ missing: !profile.owns(k.id) }" :data-testid="`col-${k.id}`">

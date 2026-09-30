@@ -14,6 +14,9 @@ export function installDebug(engine: Engine): () => void {
       phase: game.phase,
       screen: game.screen,
       mode: game.round?.mode ?? null,
+      seed: game.round?.seed ?? null,
+      bad: game.round?.bad ?? null,
+      challenge: game.challenge ? { ...game.challenge } : null,
       peelCoverage: engine.peelCoverage,
       cutCount: engine.cutCount,
       pieceCount: engine.pieceCount,
@@ -30,6 +33,9 @@ export function installDebug(engine: Engine): () => void {
     goToCutting: () => game.goToCutting(),
     cutAt: (axis: Axis, pos: number) => engine.cutAtLocal(axis, pos) === 'ok',
     finishRound: () => engine.finish(),
+    completeQuests: () => profile.quests?.items.forEach((q) => { q.progress = q.target }),
+    setOrders: (o: typeof profile.orders) => { profile.orders = o },
+    setChallengeEnd: (ms: number) => { if (game.challenge) game.challenge.endsAt = Date.now() + ms },
     addMoney: (n: number) => profile.earn(n),
   }
   ;(window as unknown as { __potato?: typeof api }).__potato = api

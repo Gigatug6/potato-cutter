@@ -3,6 +3,7 @@ import GameCanvas from './components/GameCanvas.vue'
 import HudBar from './components/hud/HudBar.vue'
 import PhaseActions from './components/hud/PhaseActions.vue'
 import MainMenu from './components/screens/MainMenu.vue'
+import ChallengeResult from './components/screens/ChallengeResult.vue'
 import CollectionView from './components/screens/CollectionView.vue'
 import ResultsPanel from './components/screens/ResultsPanel.vue'
 import SettingsPanel from './components/screens/SettingsPanel.vue'
@@ -21,6 +22,7 @@ const game = useGameStore()
         <HudBar />
         <PhaseActions />
         <ResultsPanel />
+        <ChallengeResult />
       </template>
       <ShopView v-else-if="game.screen === 'shop'" />
       <CollectionView v-else-if="game.screen === 'collection'" />

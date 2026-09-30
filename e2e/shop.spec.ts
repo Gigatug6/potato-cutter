@@ -19,7 +19,7 @@ test('boutique : achat, équipement, persistance après reload, caisse, reset', 
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('potato-cutter:save')!))
   expect(saved.equippedKnifeId).toBe('chef-azur')
   expect(saved.ownedKnives['chef-azur']).toBeTruthy()
-  expect(saved.money).toBeLessThan(20000 - 2000)
+  expect(saved.money).toBeLessThanOrEqual(20000 - 2000) // un doublon « rare » rembourse exactement le prix de la caisse
   expect(errors).toEqual([])
 })
 
