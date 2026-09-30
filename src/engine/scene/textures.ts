@@ -1,5 +1,11 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, TextureLoader, type Texture, type WebGLRenderer } from 'three'
 
+/** Textures de base (clé → fichier sans extension) ayant un équivalent .ktx2. */
+export const KTX_FILES: Partial<Record<keyof SceneTextures, string>> = {
+  woodDiff: 'wood_table_001_diff', woodNor: 'wood_table_001_nor', skinDiff: 'brown_mud_02_diff', skinNor: 'brown_mud_02_nor',
+  metalDiff: 'metal_diff', metalNor: 'metal_nor',
+}
+
 export interface SceneTextures {
   woodDiff: Texture; woodNor: Texture; skinDiff: Texture; skinNor: Texture
   metalDiff: Texture; metalNor: Texture

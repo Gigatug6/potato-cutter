@@ -1,0 +1,44 @@
+# Production : Caddy sert dist/ précompressé (Brotli/gzip), proxifie /api vers l'API de sauvegarde,
+# applique cache + en-têtes de sécurité et obtient tout seul un certificat HTTPS si SITE_ADDRESS est un nom de domaine.
+{
+	auto_https {$AUTO_HTTPS:off}
+}
+
+{$SITE_ADDRESS::80} {
+	root * /srv
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+		-Server
+	}
+
+	# API de sauvegarde en ligne
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	# fichiers hachés : immuables
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	# médias lourds non hachés : 30 jours
+	@media path /textures/* /decor/* /hdri/* /icons/* /basis/* /og-image.jpg /favicon.svg
+	header @media Cache-Control "public, max-age=2592000"
+
+	# jamais en cache : page d'entrée, service worker, manifest
+	@entry path / /index.html /sw.js /manifest.webmanifest /sitemap.xml /robots.txt
+	header @entry Cache-Control "no-cache"
+
+	handle {
+		try_files {path} /index.html
+		file_server {
+			precompressed br gzip
+		}
+	}
+}

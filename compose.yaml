@@ -61,8 +61,15 @@ services:
     image: potato-cutter-prod
     depends_on:
       - api
+    environment:
+      SITE_ADDRESS: "${SITE_ADDRESS:-:80}"   # « :80 » en local ; un nom de domaine active le HTTPS automatique
+      AUTO_HTTPS: "${AUTO_HTTPS:-off}"
     ports:
       - "8080:80"
+      - "8443:443"
+    volumes:
+      - caddy_data:/data
 volumes:
   node_modules:
   api_data:
+  caddy_data:

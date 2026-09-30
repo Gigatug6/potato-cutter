@@ -1,4 +1,5 @@
-# Image de production : build Vite puis nginx (≈ 25 Mo). Usage : SITE_URL=https://mon-domaine.fr make prod
+# Image de production : build Vite, précompression Brotli/gzip, puis Caddy (HTTPS automatique, HTTP/3).
+# Usage : SITE_URL=https://mon-domaine.fr SITE_ADDRESS=mon-domaine.fr AUTO_HTTPS=on make prod
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -6,11 +7,10 @@ RUN npm ci
 COPY . .
 ARG SITE_URL=http://localhost:8080
 ENV SITE_URL=$SITE_URL
-RUN npm run build
+RUN npm run build && node scripts/precompress.mjs dist
 
-FROM nginx:1.27-alpine
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/security-headers.inc /etc/nginx/conf.d/security-headers.inc
-COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+FROM caddy:2-alpine
+COPY docker/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv
+EXPOSE 80 443
 HEALTHCHECK CMD wget -qO- http://localhost/ >/dev/null || exit 1

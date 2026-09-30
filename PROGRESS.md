@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Prochaine étape : 9.7 sauvegarde en ligne** (commandes : `make check`, `make e2e`, `make dev`)
+- **Projet terminé (phase 9 incluse)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -56,9 +56,9 @@
 - [x] 9.4 Manette (Gamepad API : curseur virtuel, A = éplucher/trancher, etc.)
 - [x] 9.5 Clients de restaurant 3D animés liés aux commandes
 - [x] 9.6 Traduction EN (i18n FR/EN, sélecteur de langue)
-- [ ] 9.7 Sauvegarde en ligne (mini-serveur Node + export/import + code de synchro)
-- [ ] 9.8 Production : Caddy (Brotli/zstd/gzip, HTTPS auto) + doc CDN
-- [ ] 9.9 Textures KTX2/Basis : évaluer la faisabilité (encodeur requis)
+- [x] 9.7 Sauvegarde en ligne (mini-serveur Node + export/import + code de synchro)
+- [x] 9.8 Production : Caddy (Brotli/zstd/gzip, HTTPS auto) + doc CDN
+- [x] 9.9 Textures KTX2/Basis : évaluer la faisabilité (encodeur requis)
 
 ## Décisions
 - D1 : three.js direct plutôt que TresJS (maillages impératifs).
@@ -158,3 +158,16 @@
 
 ## Idées d'améliorations restantes
 Musique et ambiance sonore ; traduction EN (i18n) ; succès/trophées ; sauvegarde cloud ; partage de captures ; manette ; animations d'accueil ; mode « commande de restaurant » avec client animé ; KTX2/Basis pour les textures GPU ; `renderer.compileAsync` (quand l'extension parallèle est dispo) ; hébergement CDN + Brotli.
+
+### 2026-10-01 — Phase 9 (idées restantes)
+- 9.1 Musique générative lofi (accords/mélodie/kick/hat, 4 ambiances) + bruit de fond de cuisine, volume dans Réglages, démarre au 1er geste.
+- 9.2 21 succès avec récompenses, toasts, vitrine (Collection), compteurs sauvegardés.
+- 9.3 Capture/partage : filigrane, Web Share (mobile) sinon PNG ; fonctionne aussi en ray tracing ; succès « Photographe ».
+- 9.4 Manette : curseur virtuel (stick gauche/croix), A = éplucher (maintenu) / trancher, stick droit = rotation, LB/RB = couteau, X = tourner, Y = capture, B = jeter, Start = étape suivante ; logique pure testée.
+- 9.5 Clients 3D (capsule + tête, toque/casquette/cheveux/moustache) : un par commande, bulle « plat · mode · note », saut de joie quand servi puis départ, nouveau client qui arrive.
+- 9.6 i18n FR/EN : dictionnaire FR→EN + règles pour les textes dynamiques + traducteur DOM (MutationObserver) ; test de couverture de toutes les données ; langue par défaut selon le navigateur ; bouton 🌐 au menu.
+- 9.7 Sauvegarde en ligne : API Node 24 sans dépendance (`server/`, TypeScript exécuté nativement), code de synchro de 80 bits, PUT/GET, limite 64 Ko, limiteur de débit, écriture atomique ; export/import de fichier ; confirmation avant remplacement.
+- 9.8 Production : Caddy (HTTPS automatique si SITE_ADDRESS = domaine, HTTP/3, Brotli précompressé q11 : 13,2 Mo → 5,4 Mo, zstd/gzip dynamique), proxy /api, cache immuable, CSP/HSTS.
+- 9.9 KTX2/Basis : `scripts/make-ktx2.mjs` (ETC1S avec mipmaps), chargement WebP puis montée en gamme en arrière-plan vers KTX2 (repli WebP), transcodeur Basis dans public/basis.
+- 146 tests unitaires + 35 e2e verts.
+- Limites connues : ETC1S aplatit les normal maps très subtiles (bois) ; le traducteur DOM suppose que le français reste la langue source (les nouveaux textes doivent être ajoutés à `src/i18n/en.ts` — le test de couverture protège les données, pas les gabarits).

@@ -23,6 +23,7 @@ export function installDebug(engine: Engine): () => void {
       pieceCount: engine.pieceCount,
       money: profile.money,
       frames: engine.frames,
+      ktx2: engine.compressedTextures,
       musicRunning: music.running,
       photo: { active: engine.photoActive, samples: engine.photoSamples },
       result: game.round?.result ?? null,

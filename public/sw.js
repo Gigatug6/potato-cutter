@@ -4,7 +4,7 @@
  * - navigation                       : réseau d'abord, repli sur la version en cache */
 const VERSION = 'v1'
 const CACHE = `potato-${VERSION}`
-const STATIC_PREFIXES = ['/textures/', '/decor/', '/hdri/', '/icons/']
+const STATIC_PREFIXES = ['/textures/', '/decor/', '/hdri/', '/icons/', '/basis/']
 
 self.addEventListener('install', () => self.skipWaiting())
 

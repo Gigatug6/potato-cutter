@@ -27,7 +27,8 @@ import type { PathTraceSession } from './fx/PathTraceSession'
 import { MeshPhysicalMaterial } from 'three'
 import type { Quality } from '../game/save/saveSchema'
 import { createEnvironment } from './scene/env'
-import { loadTextures, type SceneTextures } from './scene/textures'
+import { Ktx2Upgrader } from './scene/ktx2'
+import { KTX_FILES, loadTextures, type SceneTextures } from './scene/textures'
 
 export interface EngineEvents extends Record<string, unknown> {
   peelProgress: number
@@ -109,6 +110,7 @@ export class Engine {
   frames = 0
   private fryTarget = new Vector3()
   private kitchen!: Kitchen
+  private ktx2!: Ktx2Upgrader
   private fx: PostFx | null = null
   private quality: Quality = 'low'
   private time = 0
@@ -161,7 +163,8 @@ export class Engine {
 
     this.tex = loadTextures(this.renderer)
     this.env = createEnvironment(this.renderer)
-    this.kitchen = new Kitchen(this.scene, this.tex, this.renderer, this.env)
+    this.ktx2 = new Ktx2Upgrader(this.renderer, this.scene)
+    this.kitchen = new Kitchen(this.scene, this.tex, this.renderer, this.env, this.ktx2)
     this.fryTarget = this.kitchen.fryTarget
     if (opts.decor) this.kitchen.apply(opts.decor)
     this.potatoGroup.position.set(0, DEFAULT_POTATO_Y, 0)
@@ -196,6 +199,7 @@ export class Engine {
     this.resizeObs = new ResizeObserver(() => this.resize())
     this.resizeObs.observe(container)
     this.resize()
+    this.upgradeTextures()
     this.setQuality(opts.quality ?? 'low')
     this.renderer.setAnimationLoop(this.tick)
   }
@@ -324,6 +328,17 @@ export class Engine {
   }
 
   get currentQuality(): Quality { return this.quality }
+
+  /** Passe les textures de base du WebP au KTX2 (GPU compressé) une fois les matériaux en place. */
+  private upgradeTextures(): void {
+    for (const [key, stem] of Object.entries(KTX_FILES) as [keyof SceneTextures, string][]) {
+      const old = this.tex[key]
+      const dir = stem.startsWith('wood') || stem.startsWith('brown') || stem.startsWith('metal') ? 'textures' : 'decor'
+      this.ktx2.upgrade(old, `${import.meta.env.BASE_URL}${dir}/${stem}.ktx2`, (t) => { this.tex[key] = t })
+    }
+  }
+
+  get compressedTextures(): number { return this.ktx2.count() }
 
   /** Met le rendu en pause (écrans opaques : boutique, collection, réglages) : 0 % GPU. */
   setPaused(v: boolean): void {
@@ -827,6 +842,7 @@ export class Engine {
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()
     this.stopPhoto()
+    this.ktx2.dispose()
     this.fx?.dispose()
     this.kitchen.dispose()
     this.env.dispose()

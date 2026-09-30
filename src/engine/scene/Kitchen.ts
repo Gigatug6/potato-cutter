@@ -6,6 +6,7 @@ import {
 } from 'three'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { DEFAULT_DECOR, decorById, type DecorDef, type MoodStyle, type PropKind } from '../../game/data/decor'
+import type { Ktx2Upgrader } from './ktx2'
 import type { SceneTextures } from './textures'
 
 export const BOARD_TOP = 0.1
@@ -37,7 +38,7 @@ export class Kitchen {
   private time = 0
   private appliedKey = ''
 
-  constructor(private readonly scene: Scene, private readonly tex: SceneTextures, private readonly renderer: WebGLRenderer, fallbackEnv: Texture) {
+  constructor(private readonly scene: Scene, private readonly tex: SceneTextures, private readonly renderer: WebGLRenderer, fallbackEnv: Texture, private readonly ktx2?: Ktx2Upgrader) {
     this.mood = decorById('mood-studio')!.mood!
     scene.background = new Color(this.mood.bg)
     scene.fog = new Fog(this.mood.bg, 25, 55)
@@ -84,6 +85,7 @@ export class Kitchen {
       t.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy())
       if (file === 'diff') t.colorSpace = SRGBColorSpace
       this.texCache.set(key, t)
+      this.ktx2?.upgrade(t, `${import.meta.env.BASE_URL}decor/${name}_${file}.ktx2`, (k) => this.texCache.set(key, k))
     }
     return t
   }
