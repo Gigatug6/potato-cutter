@@ -6,6 +6,7 @@ import { installDebug } from '../debug'
 import { effectiveQuality } from '../quality'
 import { music } from '../audio/music'
 import { shareCapture } from '../share'
+import { GamepadController } from '../input/gamepad'
 import { decorById } from '../game/data/decor'
 import { Engine } from '../engine/Engine'
 import { engineRef } from '../engine/bridge'
@@ -48,6 +49,33 @@ function armMusic() {
   window.addEventListener('keydown', go, { once: true })
 }
 
+// ---- manette : curseur virtuel + actions (voir input/gamepad.ts)
+let padRaf = 0
+let padLast = 0
+const pad = new GamepadController({
+  bounds: () => host.value?.getBoundingClientRect() ?? { left: 0, top: 0, width: 1, height: 1 },
+  pointer: (t, x, y) => engine?.virtualPointer(t, x, y),
+  nudge: (d) => engine?.nudgeCut(d),
+  rotate: (dx, dy) => engine?.rotateBy(dx, dy),
+  toggleRotate: () => { game.rotateMode = !game.rotateMode },
+  capture: () => { void shot() },
+  discard: () => { if (!game.discardBadPotato() && game.phase === 'results') game.backToMenu() },
+  start: () => {
+    if (game.screen === 'menu') game.startRound('rondelles')
+    else if (game.phase === 'peeling') game.goToCutting()
+    else if (game.phase === 'cutting') engine?.finish()
+    else if (game.phase === 'results') game.nextPotato()
+  },
+  cursor: (x, y, on) => { cursor.value = { x, y, on } },
+})
+function padLoop(t: number) {
+  const dt = Math.min(0.05, (t - padLast) / 1000 || 0.016)
+  padLast = t
+  const p = (navigator.getGamepads?.() ?? []).find((g) => g && g.connected) ?? null
+  if (p || cursor.value.on) pad.poll(p ? { axes: p.axes, buttons: p.buttons } : null, dt)
+  padRaf = requestAnimationFrame(padLoop)
+}
+
 function init() {
   if (engine || !host.value) return
   armMusic()
@@ -83,6 +111,7 @@ function init() {
   }
   startIfNeeded()
   window.addEventListener('keydown', onKey)
+  padRaf = requestAnimationFrame(padLoop)
 }
 
 watch(() => game.round, (r) => {
@@ -112,6 +141,7 @@ function launch(r: NonNullable<typeof game.round>) {
 }
 
 const rtStart = () => { void engine?.startPhoto() }
+const cursor = ref({ x: 0, y: 0, on: false })
 const toast = ref('')
 async function shot() {
   if (!engine) return
@@ -137,6 +167,7 @@ function onKey(e: KeyboardEvent) {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
+  cancelAnimationFrame(padRaf)
   offs.forEach((f) => f())
   engine?.dispose()
   engineRef.current = null
@@ -146,6 +177,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="host" class="game-canvas"></div>
+  <div v-if="cursor.on" class="pad-cursor" data-testid="pad-cursor" :style="{ left: cursor.x + 'px', top: cursor.y + 'px' }" aria-hidden="true"></div>
   <div class="floaters">
     <span v-for="f in floaters" :key="f.id" class="floater" :class="{ big: f.big }" :style="{ left: f.x + 'px', top: f.y + 'px' }">{{ f.text }}</span>
   </div>
@@ -177,6 +209,7 @@ onBeforeUnmount(() => {
 .rt { padding: 6px 10px; font-size: 0.85rem; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); border: 0; }
 .chip { background: var(--panel); padding: 6px 10px; border-radius: 999px; font-size: 0.82rem; box-shadow: var(--shadow); }
 .chip.err { color: var(--bad); }
+.pad-cursor { position: fixed; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #2457d6, 0 2px 8px rgba(0,0,0,.5); pointer-events: none; z-index: 60; }
 .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .floater { position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 1.4rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6); animation: rise 1.1s ease-out forwards; }
 .floater.big { font-size: 2.2rem; color: #ffd36a; }

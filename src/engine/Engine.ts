@@ -349,6 +349,22 @@ export class Engine {
     }
   }
 
+  /** Pointeur virtuel (manette) : mêmes chemins que la souris. Coordonnées client (px). */
+  virtualPointer(type: 'down' | 'move' | 'up', x: number, y: number): void {
+    const e = { clientX: x, clientY: y, button: 0, shiftKey: false, target: this.canvas } as unknown as PointerEvent
+    if (type === 'down') this.onDown(e)
+    else if (type === 'move') this.onMove(e)
+    else this.onUp(e)
+  }
+
+  /** Fait tourner la patate (px d'écran) — molette/stick droit. */
+  rotateBy(dx: number, dy: number): void {
+    if (this.mode !== 'peeling' || this.photo) return
+    const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), dx * 0.012).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), dy * 0.012))
+    this.potatoGroup.quaternion.premultiply(q)
+    this.targetQuat.copy(this.potatoGroup.quaternion)
+  }
+
   /** Clavier : déplace le guide de coupe (pas de 0,06) — accessibilité sans souris. */
   nudgeCut(dir: number): void {
     if (this.mode !== 'cutting' || !this.plan || !this.bounds) return
