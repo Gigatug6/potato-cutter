@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 0 — Infrastructure
-- **Prochaine étape : 0.5 Playwright + WebGL headless**
+- **Prochaine étape : 1.1 rng/math/events** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -10,7 +10,7 @@
 - [x] 0.2 Squelette Vue/TS/Vite
 - [x] 0.3 Vitest
 - [x] 0.4 CLAUDE.md / PROGRESS.md / README
-- [ ] 0.5 Playwright + WebGL headless — `./scripts/e2e.sh`
+- [x] 0.5 Playwright + WebGL headless — `make e2e`
 ### Phase 1 — Domaine pur
 - [ ] 1.1 rng/math/events
 - [ ] 1.2 potatoShape
@@ -47,9 +47,15 @@
 - D2 : découpe = cellule ∩ forme analytique par rétraction (pas de CSG).
 - D3 : TypeScript 5.9 (TS 7 casse vue-tsc).
 
+- D4 : hôte `app` refusé par Chromium (TLD `.app` en HSTS) → alias réseau `vite` pour l'e2e.
+- D5 : Makefile ajouté (init, dev, up, check, e2e, sh, npm, clean).
+
 ## Blocages / dettes
 - (aucun)
 
 ## Journal
 ### 2026-09-30 — Étapes 0.1–0.4
 - Docker OK (Node 24, UID 1001), squelette Vite/Vue, `check.sh` vert (1 fichier de tests), dev server répond sur 5173.
+
+### 2026-09-30 — Étape 0.5 + Makefile
+- Playwright 1.63.0, WebGL OK via swiftshader, smoke e2e vert.

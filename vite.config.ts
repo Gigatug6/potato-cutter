@@ -8,7 +8,7 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    allowedHosts: ['app', 'localhost'],
+    allowedHosts: ['app', 'vite', 'localhost'],
     watch: { usePolling: process.env.CHOKIDAR_USEPOLLING === 'true' },
   },
   test: {
