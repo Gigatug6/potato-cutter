@@ -95,6 +95,7 @@ function init() {
     ev.on('cut', (p) => { game.registerCut(p.pieceCount); playChop(); if (!profile.settings.reducedMotion) addFloater(p.screen.x, p.screen.y, '✂') }),
     ev.on('cutRejected', () => playError()),
     ev.on('fried', () => { game.resultsVisible = true; playSizzle() }),
+    ev.on('customers', (c) => (bubbles.value = c)),
     ev.on('contextLost', () => (lost.value = true)),
     ev.on('photo', (p) => (photo.value = { active: p.active, samples: p.samples, compiling: p.compiling, error: p.error ?? '' })),
     ev.on('allCutsDone', () => engine?.finish()),
@@ -110,6 +111,7 @@ function init() {
     if (r && !r.result && game.phase === 'peeling') launch(r)
   }
   startIfNeeded()
+  engine.setOrders(profile.orders.map((o) => o.id))
   window.addEventListener('keydown', onKey)
   padRaf = requestAnimationFrame(padLoop)
 }
@@ -123,6 +125,8 @@ watch(() => game.phase, (p) => { if (p === 'cutting') engine?.beginCutting() })
 // écrans opaques : on coupe le rendu 3D (économie GPU/batterie)
 watch(() => game.screen, (sc) => engine?.setPaused(sc === 'shop' || sc === 'collection' || sc === 'settings'))
 watch(() => profile.settings.quality, (q) => engine?.setQuality(effectiveQuality(q)))
+watch(() => game.round?.order?.id, (id) => { if (id) engine?.orderDelivered(id) })
+watch(() => profile.orders.map((o) => o.id), (ids) => engine?.setOrders(ids))
 watch(() => [...profile.decorEquipped], (ids) => { engine?.setDecor(ids); music.setMood(moodId(ids)) })
 watch(() => profile.settings.music, (v) => { music.setVolume(v); if (v > 0) music.start() })
 watch(() => profile.settings.sound, (v) => setSoundEnabled(v))
@@ -141,6 +145,8 @@ function launch(r: NonNullable<typeof game.round>) {
 }
 
 const rtStart = () => { void engine?.startPhoto() }
+const bubbles = ref<{ id: string; x: number; y: number }[]>([])
+const orderOf = (id: string) => profile.orders.find((o) => o.id === id)
 const cursor = ref({ x: 0, y: 0, on: false })
 const toast = ref('')
 async function shot() {
@@ -178,6 +184,14 @@ onBeforeUnmount(() => {
 <template>
   <div ref="host" class="game-canvas"></div>
   <div v-if="cursor.on" class="pad-cursor" data-testid="pad-cursor" :style="{ left: cursor.x + 'px', top: cursor.y + 'px' }" aria-hidden="true"></div>
+  <div class="bubbles" aria-hidden="true">
+    <div v-for="b in bubbles" :key="b.id" class="bubble" :style="{ left: b.x + 'px', top: b.y + 'px' }" :data-testid="`bubble-${orderOf(b.id)?.dishId}`">
+      <template v-if="orderOf(b.id)">
+        {{ orderOf(b.id)!.emoji ?? '🍽' }} {{ orderOf(b.id)!.label }}
+        <small>{{ orderOf(b.id)!.mode }} · ≥ {{ orderOf(b.id)!.minGrade }}</small>
+      </template>
+    </div>
+  </div>
   <div class="floaters">
     <span v-for="f in floaters" :key="f.id" class="floater" :class="{ big: f.big }" :style="{ left: f.x + 'px', top: f.y + 'px' }">{{ f.text }}</span>
   </div>
@@ -210,6 +224,10 @@ onBeforeUnmount(() => {
 .chip { background: var(--panel); padding: 6px 10px; border-radius: 999px; font-size: 0.82rem; box-shadow: var(--shadow); }
 .chip.err { color: var(--bad); }
 .pad-cursor { position: fixed; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #2457d6, 0 2px 8px rgba(0,0,0,.5); pointer-events: none; z-index: 60; }
+.bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bubble { position: absolute; transform: translate(-50%, -100%); background: #fff; border: 2px solid #2b1d0e; border-radius: 14px; padding: 4px 10px; font-size: 0.82rem; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.bubble small { display: block; font-weight: 500; opacity: 0.75; text-align: center; }
+.bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -6px; border: 6px solid transparent; border-top-color: #2b1d0e; border-bottom: 0; }
 .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .floater { position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 1.4rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6); animation: rise 1.1s ease-out forwards; }
 .floater.big { font-size: 2.2rem; color: #ffd36a; }

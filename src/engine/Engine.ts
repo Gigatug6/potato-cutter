@@ -15,6 +15,7 @@ import { applyPrecision } from '../game/scoring/scoring'
 import { PiecesGroup } from './cutting/PiecesGroup'
 import { KnifeRig } from './knives/KnifeRig'
 import { PeelParticles } from './potato/PeelParticles'
+import { Customers } from './scene/Customers'
 import { PeelStrips } from './potato/PeelStrips'
 import { PeelerTool } from './potato/PeelerTool'
 import { autoPeelSpeed } from '../game/data/upgrades'
@@ -37,6 +38,7 @@ export interface EngineEvents extends Record<string, unknown> {
   finished: { bounds: Bounds; cuts: Cuts }
   contextLost: undefined
   fried: undefined
+  customers: { id: string; x: number; y: number }[]
   photo: { active: boolean; samples: number; compiling: boolean; error?: string }
 }
 
@@ -121,6 +123,8 @@ export class Engine {
   private frameN = 0
   private lastAdapt = 0
   private kbX = 0
+  private readonly customers = new Customers()
+  private delivered = new Set<string>()
   private disposed = false
   private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
   private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
@@ -165,7 +169,7 @@ export class Engine {
     this.scene.add(this.potatoGroup, this.particles.points, this.juice.points, this.coins.points, this.oilFx.points)
     this.strips = new PeelStrips(this.tex, potatoById(STARTER_POTATO_ID)!)
     this.peeler = new PeelerTool(this.tex)
-    this.scene.add(this.strips.mesh, this.peeler.group)
+    this.scene.add(this.strips.mesh, this.peeler.group, this.customers.group)
     this.pieces.setLook(this.tex, potatoById(STARTER_POTATO_ID)!)
     this.rig = new KnifeRig(this.knife)
     this.scene.add(this.rig.group)
@@ -467,6 +471,16 @@ export class Engine {
     if (!this.captureResolvers.length) return
     const url = this.canvas.toDataURL('image/png') // lu juste après le rendu, tampon encore valide
     this.captureResolvers.splice(0).forEach((r) => r(url))
+  }
+
+  /** Clients = commandes en cours ; appeler `orderDelivered(id)` avant de retirer une commande servie. */
+  setOrders(ids: string[]): void {
+    this.customers.setOrders(ids, this.delivered)
+    this.delivered.clear()
+  }
+
+  orderDelivered(id: string): void {
+    this.delivered.add(id)
   }
 
   /** Décors équipés (planche, mur, ambiance, objets). */
@@ -781,6 +795,8 @@ export class Engine {
     else this.camera.lookAt(LOOK)
     this.time += dt
     this.kitchen.update(dt)
+    this.customers.update(dt)
+    if (this.frames % 6 === 0) this.events.emit('customers', this.customers.waiting().map((c) => ({ id: c.id, ...this.project(c.x, c.y, c.z) })))
     if (this.fx) {
       this.fx.setFocus(this.camera.position.distanceTo(this.potatoGroup.position))
       this.fx.render(raw)
@@ -805,6 +821,7 @@ export class Engine {
     this.coins.dispose()
     this.oilFx.dispose()
     this.strips.dispose()
+    this.customers.dispose()
     this.peeler.dispose()
     this.rig.dispose()
     this.guide.geometry.dispose()

@@ -2,18 +2,18 @@ import type { Rng } from '../core/rng'
 import type { CutModeId } from '../cutting/cutModes'
 import type { Grade } from '../scoring/scoring'
 
-export interface DishDef { id: string; label: string; mode: CutModeId; minGrade: Grade; multiplier: number }
+export interface DishDef { id: string; label: string; emoji: string; mode: CutModeId; minGrade: Grade; multiplier: number }
 
 export const DISHES: DishDef[] = [
-  { id: 'frites', label: 'Frites maison', mode: 'frites', minGrade: 'C', multiplier: 1.5 },
-  { id: 'chips', label: 'Chips croustillantes', mode: 'rondelles', minGrade: 'B', multiplier: 1.6 },
-  { id: 'gratin', label: 'Gratin dauphinois', mode: 'rondelles', minGrade: 'A', multiplier: 2.2 },
-  { id: 'puree', label: 'Purée rustique', mode: 'des', minGrade: 'C', multiplier: 1.4 },
-  { id: 'salade', label: 'Salade de patates', mode: 'des', minGrade: 'A', multiplier: 2.5 },
-  { id: 'rosti', label: 'Rösti parfait', mode: 'frites', minGrade: 'S', multiplier: 3 },
+  { id: 'frites', emoji: '🍟', label: 'Frites maison', mode: 'frites', minGrade: 'C', multiplier: 1.5 },
+  { id: 'chips', emoji: '🥔', label: 'Chips croustillantes', mode: 'rondelles', minGrade: 'B', multiplier: 1.6 },
+  { id: 'gratin', emoji: '🧀', label: 'Gratin dauphinois', mode: 'rondelles', minGrade: 'A', multiplier: 2.2 },
+  { id: 'puree', emoji: '🥣', label: 'Purée rustique', mode: 'des', minGrade: 'C', multiplier: 1.4 },
+  { id: 'salade', emoji: '🥗', label: 'Salade de patates', mode: 'des', minGrade: 'A', multiplier: 2.5 },
+  { id: 'rosti', emoji: '🥞', label: 'Rösti parfait', mode: 'frites', minGrade: 'S', multiplier: 3 },
 ]
 
-export interface Order { id: string; dishId: string; mode: CutModeId; minGrade: Grade; multiplier: number; label: string }
+export interface Order { id: string; dishId: string; emoji?: string; mode: CutModeId; minGrade: Grade; multiplier: number; label: string }
 
 export const ORDER_COUNT = 3
 const GRADE_ORDER: Grade[] = ['S', 'A', 'B', 'C', 'D']
@@ -23,7 +23,7 @@ export const gradeAtLeast = (g: Grade, min: Grade): boolean => GRADE_ORDER.index
 export function generateOrder(rng: Rng, id: string, avoidDishIds: string[] = []): Order {
   const pool = DISHES.filter((d) => !avoidDishIds.includes(d.id))
   const d = (pool.length ? pool : DISHES)[Math.floor(rng() * (pool.length || DISHES.length))]
-  return { id, dishId: d.id, mode: d.mode, minGrade: d.minGrade, multiplier: d.multiplier, label: d.label }
+  return { id, dishId: d.id, emoji: d.emoji, mode: d.mode, minGrade: d.minGrade, multiplier: d.multiplier, label: d.label }
 }
 
 /** Complète la liste jusqu'à ORDER_COUNT commandes (plats distincts si possible). */

@@ -21,7 +21,7 @@ export interface RoundState {
   bad: BadKind | null
   result?: RoundResult
   /** commande livrée avec cette manche */
-  order?: { label: string; bonus: number }
+  order?: { id: string; label: string; bonus: number }
 }
 
 export interface Challenge {
@@ -98,7 +98,7 @@ export const useGameStore = defineStore('game', () => {
     const bt = st.bestTimeMs[r.mode]
     if (res.completion >= 1 && (bt === null || durationMs < bt)) st.bestTimeMs[r.mode] = durationMs
     const delivered = profile.recordRound({ mode: r.mode, grade: res.grade, reward: res.reward })
-    if (delivered) r.order = { label: delivered.order.label, bonus: delivered.bonus }
+    if (delivered) r.order = { id: delivered.order.id, label: delivered.order.label, bonus: delivered.bonus }
     if (challenge.value && !challenge.value.done) {
       challenge.value.potatoes++
       challenge.value.score += res.reward + (delivered?.bonus ?? 0)

@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Prochaine étape : 9.1 musique (phase 9)** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 9.5 clients 3D** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -50,10 +50,10 @@
 - [x] 6.5 e2e des nouveautés + vérification finale
 
 ## Phase 9 — idées restantes (demande utilisateur : « prépare les tâches et fais-les »)
-- [ ] 9.1 Musique générative lofi + ambiance sonore (volume dans Réglages, suit l'ambiance du décor)
-- [ ] 9.2 Succès / trophées (toasts, vitrine dans Collection)
-- [ ] 9.3 Partage : capture PNG + Web Share
-- [ ] 9.4 Manette (Gamepad API : curseur virtuel, A = éplucher/trancher, etc.)
+- [x] 9.1 Musique générative lofi + ambiance sonore (volume dans Réglages, suit l'ambiance du décor)
+- [x] 9.2 Succès / trophées (toasts, vitrine dans Collection)
+- [x] 9.3 Partage : capture PNG + Web Share
+- [x] 9.4 Manette (Gamepad API : curseur virtuel, A = éplucher/trancher, etc.)
 - [ ] 9.5 Clients de restaurant 3D animés liés aux commandes
 - [ ] 9.6 Traduction EN (i18n FR/EN, sélecteur de langue)
 - [ ] 9.7 Sauvegarde en ligne (mini-serveur Node + export/import + code de synchro)

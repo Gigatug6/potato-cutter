@@ -83,7 +83,7 @@ describe('game — phase 6', () => {
     g.startRound('rondelles', 42, null)
     g.setPeelCoverage(1); g.goToCutting()
     const r = g.finishRound(B, cuts())!
-    expect(g.round!.order).toEqual({ label: 'Chips', bonus: r.reward * 2 })
+    expect(g.round!.order).toEqual({ id: 'a', label: 'Chips', bonus: r.reward * 2 })
     expect(p.money).toBe(r.reward * 3)
     expect(p.orders).toHaveLength(3)
     expect(p.orders.some((o) => o.id === 'a')).toBe(false)
