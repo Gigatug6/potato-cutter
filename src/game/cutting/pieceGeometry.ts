@@ -46,6 +46,9 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
   const g = new BoxGeometry(size[0], size[1], size[2], seg(size[0]), seg(size[1]), seg(size[2]))
   const pos = g.getAttribute('position') as BufferAttribute
   const col = new Float32Array(pos.count * 3)
+  const peelAttr = new Float32Array(pos.count)
+  const uv = new Float32Array(pos.count * 2)
+  const nrm = g.getAttribute('normal') as BufferAttribute
 
   for (let v = 0; v < pos.count; v++) {
     const p: Vec3 = [pos.getX(v) + center[0], pos.getY(v) + center[1], pos.getZ(v) + center[2]]
@@ -72,7 +75,14 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
       c = peel.sample([p[0] / l, p[1] / l, p[2] / l]) ? colors.flesh : colors.skin
     }
     col[v * 3] = c[0]; col[v * 3 + 1] = c[1]; col[v * 3 + 2] = c[2]
+    peelAttr[v] = !outer || c === colors.flesh ? 1 : 0
+    // UV planaires selon la face d'origine de la boîte, en coordonnées de la patate (continuité du grain entre pièces)
+    const ax = Math.abs(nrm.getX(v)), ay = Math.abs(nrm.getY(v)), az = Math.abs(nrm.getZ(v))
+    const [u0, v0] = ax >= ay && ax >= az ? [p[2], p[1]] : ay >= az ? [p[0], p[2]] : [p[0], p[1]]
+    uv[v * 2] = u0 * 0.6; uv[v * 2 + 1] = v0 * 0.6
   }
+  g.setAttribute('aPeel', new BufferAttribute(peelAttr, 1))
+  g.setAttribute('uv', new BufferAttribute(uv, 2))
   g.setAttribute('color', new BufferAttribute(col, 3))
   g.computeVertexNormals()
   g.computeBoundingSphere()

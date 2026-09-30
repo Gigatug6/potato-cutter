@@ -14,11 +14,12 @@ import { applyPrecision } from '../game/scoring/scoring'
 import { PiecesGroup } from './cutting/PiecesGroup'
 import { KnifeRig } from './knives/KnifeRig'
 import { PeelParticles } from './potato/PeelParticles'
+import { PeelStrips } from './potato/PeelStrips'
+import { PeelerTool } from './potato/PeelerTool'
 import { autoPeelSpeed } from '../game/data/upgrades'
 import { radiusAt } from '../game/potato/potatoShape'
 import { PotatoMesh, type PotatoLook } from './potato/PotatoMesh'
 import { BOARD_TOP, buildKitchen } from './scene/Kitchen'
-import { Color, Mesh as ThreeMesh, SphereGeometry, ConeGeometry, MeshStandardMaterial } from 'three'
 import { createEnvironment } from './scene/env'
 import { loadTextures, type SceneTextures } from './scene/textures'
 
@@ -44,6 +45,9 @@ export interface RoundOptions {
 
 export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef }
 
+/** rayon (rad) de l'éplucheur sur la patate : grande lame, épluche large */
+const PEEL_RADIUS = 0.32
+const AUTO_PEEL_RADIUS = 0.28
 const DEFAULT_POTATO_Y = BOARD_TOP + 0.95
 const CAM_PEEL = new Vector3(0, 3.6, 5)
 const CAM_CUT = new Vector3(0, 4.2, 3.4)
@@ -99,7 +103,10 @@ export class Engine {
   private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
   private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
   private readonly oilFx = new PeelParticles('#ffd27a', 0.05, 2)
-  private robot: ThreeMesh | null = null
+  private readonly strips: PeelStrips
+  private readonly peeler: PeelerTool
+  private lastStrip = 0
+  private hoverPeeler = false
   private autoPeelLevel = 0
   private autoT = 0
   private autoLast: Vec3 | null = null
@@ -127,8 +134,10 @@ export class Engine {
     this.potatoGroup.position.set(0, DEFAULT_POTATO_Y, 0)
     this.potatoGroup.add(this.pieces.group)
     this.scene.add(this.potatoGroup, this.particles.points, this.juice.points, this.coins.points, this.oilFx.points)
-    this.robot = this.buildRobot()
-    this.scene.add(this.robot)
+    this.strips = new PeelStrips(this.tex, potatoById(STARTER_POTATO_ID)!)
+    this.peeler = new PeelerTool(this.tex)
+    this.scene.add(this.strips.mesh, this.peeler.group)
+    this.pieces.setLook(this.tex, potatoById(STARTER_POTATO_ID)!)
     this.rig = new KnifeRig(this.knife)
     this.scene.add(this.rig.group)
     this.guide = new Mesh(new BoxGeometry(0.012, 1.6, 1.8), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false }))
@@ -165,6 +174,10 @@ export class Engine {
     const look: PotatoLook = opts.bad ? BAD_LOOKS[opts.bad] : kind
     this.colors = { flesh: look.flesh, skin: look.skinPiece }
     this.pieces.colors = this.colors
+    this.pieces.setLook(this.tex, look)
+    this.strips.reset()
+    this.strips.setLook(look)
+    this.peeler.show(false)
     this.shape = createPotatoShape(seed, kind.radiiMult, opts.scale ?? 1)
     this.peel = new PeelMap()
     this.potato = new PotatoMesh(this.shape, this.peel, this.tex, look)
@@ -383,6 +396,10 @@ export class Engine {
     if (this.mode === 'peeling' && this.peeling) {
       const h = this.hitPotato()
       if (h) this.peelAt(h)
+    } else if (this.mode === 'peeling') {
+      const h = this.hitPotato()
+      this.hoverPeeler = !!h
+      if (h) this.peeler.placeAt(h.world, false)
     } else if (this.mode === 'cutting') {
       const x = this.cutWorldX()
       if (x !== null && this.plan) {
@@ -421,12 +438,14 @@ export class Engine {
   }
 
   private peelAt(h: { dir: Vec3; world: Vector3 }): void {
-    const radius = 0.2 * Math.sqrt(this.knife.stats.speed)
+    const radius = PEEL_RADIUS * Math.sqrt(this.knife.stats.speed)
     const added = this.lastDir ? this.peel.paintStroke(this.lastDir, h.dir, radius) : this.peel.paint(h.dir, radius)
     this.lastDir = h.dir
+    this.peeler.placeAt(h.world, true)
     if (added > 0) {
       this.potato?.refresh()
-      this.particles.emit(h.world, 3)
+      this.particles.emit(h.world, 2)
+      this.dropStrip(h.world)
       const now = performance.now()
       if (now - this.lastProgress > 100) {
         this.lastProgress = now
@@ -451,13 +470,12 @@ export class Engine {
     return { x: ((v.x + 1) / 2) * this.container.clientWidth, y: ((1 - v.y) / 2) * this.container.clientHeight }
   }
 
-  private buildRobot(): ThreeMesh {
-    const body = new ThreeMesh(new SphereGeometry(0.12, 12, 8), new MeshStandardMaterial({ color: new Color('#c8ccd0'), metalness: 0.8, roughness: 0.3 }))
-    const blade = new ThreeMesh(new ConeGeometry(0.05, 0.22, 8), new MeshStandardMaterial({ color: '#e04040', metalness: 0.6, roughness: 0.3 }))
-    blade.position.y = -0.17
-    body.add(blade)
-    body.visible = false
-    return body
+  /** Fait tomber un ruban de peau (au plus ~25 par seconde). */
+  private dropStrip(world: Vector3): void {
+    const now = performance.now()
+    if (now - this.lastStrip < 40) return
+    this.lastStrip = now
+    this.strips.spawn(world, this.potatoGroup.position)
   }
 
   /** Éplucheur automatique : un petit robot balaie la surface en spirale. */
@@ -467,20 +485,18 @@ export class Engine {
     const t = this.autoT
     const lon = t * 3.3, lat = Math.sin(t * 0.77) * 1.25
     const dir: Vec3 = [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)]
-    const added = this.autoLast ? this.peel.paintStroke(this.autoLast, dir, 0.2) : this.peel.paint(dir, 0.2)
+    const added = this.autoLast ? this.peel.paintStroke(this.autoLast, dir, AUTO_PEEL_RADIUS) : this.peel.paint(dir, AUTO_PEEL_RADIUS)
     this.autoLast = dir
     const r = radiusAt(this.shape, dir) * 1.12
     const world = this.potatoGroup.localToWorld(new Vector3(dir[0] * r, dir[1] * r, dir[2] * r))
-    if (this.robot) {
-      this.robot.visible = true
-      this.robot.position.copy(world).add(new Vector3(0, 0.25, 0))
-    }
+    this.peeler.placeAt(world, true)
     if (added > 0) {
       this.autoAcc += dt
       if (this.autoAcc > 0.08) {
         this.autoAcc = 0
         this.potato.refresh()
         this.particles.emit(world, 2)
+        this.dropStrip(world)
         this.events.emit('peelProgress', this.peel.coverage())
       }
     }
@@ -508,7 +524,9 @@ export class Engine {
       this.controls.target.copy(LOOK)
     }
     if (this.mode === 'peeling' && !this.peeling && !this.rotating) this.autoPeel(dt)
-    else if (this.robot) this.robot.visible = false
+    if (this.mode !== 'peeling' || this.rotating || (this.autoPeelLevel <= 0 && !this.peeling && !this.hoverPeeler)) this.peeler.show(false)
+    this.peeler.update(dt)
+    this.strips.update(dt)
     this.pieces.update(dt, Math.min(0.25, raw))
     this.juice.update(dt)
     this.coins.update(dt)
@@ -539,7 +557,8 @@ export class Engine {
     this.juice.dispose()
     this.coins.dispose()
     this.oilFx.dispose()
-    this.robot?.geometry.dispose()
+    this.strips.dispose()
+    this.peeler.dispose()
     this.rig.dispose()
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()

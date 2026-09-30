@@ -1,4 +1,6 @@
-import { Group, Mesh, MeshStandardMaterial, Vector3, type BufferGeometry, type Object3D } from 'three'
+import { Group, Mesh, Vector3, type BufferGeometry, type MeshStandardMaterial, type Object3D } from 'three'
+import { createPotatoMaterial, type PotatoLook } from '../potato/potatoMaterial'
+import type { SceneTextures } from '../scene/textures'
 import { buildPieceGeometry, DEFAULT_COLORS, type PieceColors } from '../../game/cutting/pieceGeometry'
 import type { Cell } from '../../game/cutting/cutPlan'
 import type { PeelMap } from '../../game/potato/peelMap'
@@ -12,13 +14,19 @@ interface Item { mesh: Mesh; geo: BufferGeometry; center: Vector3; target: Vecto
 export class PiecesGroup {
   readonly group = new Group()
   private items = new Map<string, Item>()
-  private readonly material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.6 })
+  private material: MeshStandardMaterial | null = null
 
   get count(): number {
     return this.items.size
   }
 
   colors: PieceColors = DEFAULT_COLORS
+
+  /** Matériau texturé (peau + chair) pour la variété courante. À appeler après clear(). */
+  setLook(tex: SceneTextures, look: PotatoLook): void {
+    this.material?.dispose()
+    this.material = createPotatoMaterial(tex, look, { vertexColors: false, normal: false, fleshScale: 1.6 })
+  }
 
   rebuild(cells: Cell[], counts: [number, number, number], shape: PotatoShape, peel: PeelMap): void {
     const next = new Map<string, Item>()
@@ -28,7 +36,7 @@ export class PiecesGroup {
       if (!item) {
         const piece = buildPieceGeometry(cell, shape, peel, this.colors)
         if (!piece) continue
-        const mesh = new Mesh(piece.geometry, this.material)
+        const mesh = new Mesh(piece.geometry, this.material!)
         mesh.castShadow = true
         mesh.position.set(piece.center[0], piece.center[1], piece.center[2])
         this.group.add(mesh)
@@ -108,6 +116,6 @@ export class PiecesGroup {
 
   dispose(): void {
     this.clear()
-    this.material.dispose()
+    this.material?.dispose()
   }
 }

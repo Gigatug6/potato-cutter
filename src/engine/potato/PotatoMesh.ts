@@ -1,7 +1,8 @@
-import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three'
+import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial } from 'three'
 import type { SceneTextures } from '../scene/textures'
+import { createPotatoMaterial, type PotatoLook } from './potatoMaterial'
 
-export interface PotatoLook { skinTint: Vec3; flesh: Vec3; skinPiece: Vec3 }
+export type { PotatoLook }
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import { createRng } from '../../game/core/rng'
 import type { PeelMap } from '../../game/potato/peelMap'
@@ -47,23 +48,7 @@ export class PotatoMesh {
     this.geo.setAttribute('color', new BufferAttribute(new Float32Array(pos.count * 3), 3))
     this.peelAttr = new BufferAttribute(new Float32Array(pos.count), 1)
     this.geo.setAttribute('aPeel', this.peelAttr)
-    const mat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9, map: tex.skinDiff, normalMap: tex.skinNor })
-    mat.normalScale.set(1.2, 1.2)
-    const flesh = new Vector3(...look.flesh)
-    // la boue (texture) est sombre : on la réchauffe et l'éclaircit pour donner une peau de patate
-    const skinTint = new Vector3(...look.skinTint)
-    mat.onBeforeCompile = (sh) => {
-      sh.uniforms.uFlesh = { value: flesh }
-      sh.uniforms.uSkinTint = { value: skinTint }
-      sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float aPeel;\nvarying float vPeel;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPeel = aPeel;')
-      sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying float vPeel;\nuniform vec3 uFlesh;\nuniform vec3 uSkinTint;')
-        .replace('#include <map_fragment>', `
-          vec3 skinC = texture2D( map, vMapUv ).rgb * uSkinTint;
-          diffuseColor.rgb *= mix( skinC, uFlesh, smoothstep( 0.35, 0.65, vPeel ) );`)
-    }
+    const mat = createPotatoMaterial(tex, look, { vertexColors: true, normal: true, fleshScale: 1.6 })
     this.mesh = new Mesh(this.geo, mat)
     this.mesh.castShadow = true
     this.refresh()

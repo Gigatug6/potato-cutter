@@ -118,3 +118,9 @@
 
 ## Les 9 suggestions — où les trouver
 1. Variétés : `game/data/potatoes.ts`, boutique → Patates. 2. Plats : `game/orders/`. 3. Améliorations : `game/data/upgrades.ts`. 4. Aperçu 3D + couteau visible : `KnifePreview.vue`, `KnifeRig.ts`. 5. Chrono + classement : store `game` + `leaderboard.ts`. 6. Quêtes : `game/quests/`. 7. Jus : particules, flottants, sons. 8. Friteuse + patate pourrie/verte : `Kitchen.ts`, `PiecesGroup.launch`, `badKindForSeed`. 9. Équilibrage : gains de base 25/70/150.
+
+### 2026-09-30 — Retours : éplucheur, peau sur la planche, chair
+- Éplucheur 3D texturé (manche bois + acier usé metal_plate_02 CC0) qui suit le pointeur, remplace le robot de l'éplucheur auto.
+- Rubans de peau (InstancedMesh, texture de peau) qui tombent et restent sur la planche jusqu'à la manche suivante.
+- Chair : texture procédurale (nuages, taches, cernes) mélangée à la peau par un shader partagé (patate entière + pièces, UV planaires continus) ; fini la couleur unie.
+- Pinceau d'épluchage agrandi (0,2 → 0,32 rad ; auto 0,28). 92 tests + 18 e2e verts.
