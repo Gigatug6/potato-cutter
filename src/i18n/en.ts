@@ -44,6 +44,7 @@ export const EXACT: Record<string, string> = {
   'Trop de requêtes, réessaie dans une minute.': 'Too many requests, try again in a minute.', 'Sauvegarde trop volumineuse.': 'Save too large.', 'Erreur du serveur.': 'Server error.',
   'Code créé et sauvegarde envoyée. Note bien ce code !': 'Code created and save uploaded. Write this code down!', 'Sauvegarde envoyée.': 'Save uploaded.',
   'Code invalide (16 caractères A–Z, 2–7).': 'Invalid code (16 characters A–Z, 2–7).', 'Fichier invalide.': 'Invalid file.', 'Sauvegarde restaurée.': 'Save restored.',
+  'Version hébergée sans serveur : sauvegarde par fichier uniquement (exporte-la pour la transférer d\'un appareil à l\'autre).': 'Serverless hosted version: file-based saves only (export it to move it between devices).',
   // --- titres de page
   'Potato Cutter — simulateur 3D de découpe de patates en ligne (gratuit)': 'Potato Cutter — free 3D potato cutting simulator online',
   'En jeu · Potato Cutter': 'In game · Potato Cutter', 'Boutique : couteaux, patates, décors · Potato Cutter': 'Shop: knives, potatoes, decor · Potato Cutter',

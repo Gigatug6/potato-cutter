@@ -43,6 +43,7 @@ services:
       HOME: /tmp
       CI: "1"
       MAKE_OG: "${MAKE_OG:-}"
+      PAGES_TEST: "${PAGES_TEST:-}"
       BASE_URL: "http://vite:5173"
     volumes:
       - .:/app

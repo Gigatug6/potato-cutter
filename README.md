@@ -18,3 +18,5 @@ Production : `SITE_URL=https://mon-domaine.fr make prod` (nginx, http://localhos
 
 ## Assets
 `scripts/optimize-assets.mjs` (JPEG→WebP), `scripts/make-ktx2.mjs` (WebP→KTX2 + transcodeur Basis), `scripts/make-icons.mjs`, `scripts/precompress.mjs` (Brotli/gzip).
+
+**Héberger gratuitement sur GitHub Pages** : guide pas à pas dans [`docs/DEPLOIEMENT-GITHUB-PAGES.md`](docs/DEPLOIEMENT-GITHUB-PAGES.md) (un seul réglage à faire côté GitHub : *Settings → Pages → Source = GitHub Actions*).

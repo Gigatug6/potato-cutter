@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { CloudFailure, downloadSave, formatCode, generateCode, normalizeCode, pullSave, pushSave, readSaveFile, storeCode, storedCode } from '../../cloud'
+import { CLOUD_ENABLED, CloudFailure, downloadSave, formatCode, generateCode, normalizeCode, pullSave, pushSave, readSaveFile, storeCode, storedCode } from '../../cloud'
 import type { SaveV1 } from '../../game/save/saveSchema'
 import { useProfileStore } from '../../stores/profile'
 import ScreenShell from './ScreenShell.vue'
@@ -100,14 +100,17 @@ function reset() {
     </section>
     <section class="panel set save" data-testid="save-panel">
       <h2>☁ Sauvegarde</h2>
-      <label>Code de synchronisation
+      <label v-if="CLOUD_ENABLED">Code de synchronisation
         <input v-model="codeInput" data-testid="sync-code" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX" />
       </label>
+      <template v-if="CLOUD_ENABLED">
       <div class="row">
         <button :disabled="cloudBusy" data-testid="cloud-create" @click="createCode">Créer un code</button>
         <button class="ghost" :disabled="cloudBusy" data-testid="cloud-push" @click="push">Envoyer</button>
         <button class="ghost" :disabled="cloudBusy" data-testid="cloud-pull" @click="pull">Restaurer</button>
       </div>
+      </template>
+      <p v-if="!CLOUD_ENABLED" class="msg" data-testid="static-note">Version hébergée sans serveur : sauvegarde par fichier uniquement (exporte-la pour la transférer d'un appareil à l'autre).</p>
       <div class="row">
         <button class="ghost" data-testid="file-export" @click="downloadSave(profile.toSave())">Exporter (.json)</button>
         <button class="ghost" data-testid="file-import" @click="fileInput?.click()">Importer un fichier</button>

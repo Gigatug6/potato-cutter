@@ -1,7 +1,10 @@
 prod:       ## build de production (Caddy, Brotli, API) sur http://localhost:8080 — SITE_URL=https://... pour le SEO
 	docker compose --profile prod up -d --build web
 
-.PHONY: prod init build install dev up down logs check typecheck test e2e sh npm clean
+pages:      ## build « GitHub Pages » (sous-dossier, sans API) + aperçu sur http://localhost:4173/potato-cutter/
+	./scripts/pages-build.sh
+
+.PHONY: pages prod init build install dev up down logs check typecheck test e2e sh npm clean
 
 init:       ## génère .env (UID/GID) et build l'image
 	./scripts/init-env.sh

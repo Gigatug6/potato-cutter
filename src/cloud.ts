@@ -5,6 +5,11 @@ import { parseSave, type SaveV1 } from './game/save/saveSchema'
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 const CODE_KEY = 'potato-cutter:sync-code'
 
+/** Faux sur un hébergement statique (GitHub Pages) : pas d'API, la section « sauvegarde en ligne » est masquée. */
+export const CLOUD_ENABLED = import.meta.env.VITE_CLOUD !== 'off'
+/** Adresse de l'API (par défaut : même origine, /api). */
+const API = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api'
+
 export const CODE_RE = /^[A-Z2-7]{16}$/
 
 export function generateCode(rand: (n: number) => Uint8Array = (n) => crypto.getRandomValues(new Uint8Array(n))): string {
@@ -35,7 +40,7 @@ export class CloudFailure extends Error {
 
 async function call(path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(`/api/save/${path}`, init)
+    return await fetch(`${API}/save/${path}`, init)
   } catch {
     throw new CloudFailure('network')
   }

@@ -171,3 +171,8 @@ Musique et ambiance sonore ; traduction EN (i18n) ; succès/trophées ; sauvegar
 - 9.9 KTX2/Basis : `scripts/make-ktx2.mjs` (ETC1S avec mipmaps), chargement WebP puis montée en gamme en arrière-plan vers KTX2 (repli WebP), transcodeur Basis dans public/basis.
 - 146 tests unitaires + 35 e2e verts.
 - Limites connues : ETC1S aplatit les normal maps très subtiles (bois) ; le traducteur DOM suppose que le français reste la langue source (les nouveaux textes doivent être ajoutés à `src/i18n/en.ts` — le test de couverture protège les données, pas les gabarits).
+
+### 2026-10-01 — GitHub Pages
+- Workflow `.github/workflows/deploy.yml` (build + typecheck + tests + déploiement Pages ; base `/depot/` calculée, domaine perso via variable `CUSTOM_DOMAIN`, CNAME/404/.nojekyll) + `ci.yml` (PR).
+- Site compatible sous-dossier : `BASE_PATH` (Vite), manifest relatif, service worker basé sur sa portée, API de sauvegarde désactivable (`VITE_CLOUD=off` → note « fichier uniquement »).
+- Doc débutant : `docs/DEPLOIEMENT-GITHUB-PAGES.md` (création du dépôt, push/auth, réglage Pages, domaine perso + DNS, dépannage, limites). `make pages` / `scripts/pages-check.sh` (test e2e du build sous /potato-cutter/ : 0 ressource 404).

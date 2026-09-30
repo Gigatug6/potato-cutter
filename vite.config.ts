@@ -20,7 +20,14 @@ function seo(): Plugin {
   }
 }
 
+/** Sous-dossier de publication (GitHub Pages « projet » : /nom-du-depot/). Vide/absent = racine. */
+const BASE = (() => {
+  const b = process.env.BASE_PATH ?? '/'
+  return b.endsWith('/') ? b : `${b}/`
+})()
+
 export default defineConfig({
+  base: BASE,
   plugins: [vue(), seo()],
   build: {
     target: 'es2022',

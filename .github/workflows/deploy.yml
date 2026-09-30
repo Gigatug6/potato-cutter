@@ -1,0 +1,82 @@
+# Publie le jeu sur GitHub Pages à chaque push sur la branche principale (ou à la demande).
+# Réglage à faire une seule fois côté GitHub : Settings → Pages → Source = « GitHub Actions ».
+# Guide complet : docs/DEPLOIEMENT-GITHUB-PAGES.md
+name: Déployer sur GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# une seule publication à la fois ; une plus récente remplace celle en cours
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Adresse du site : https://<compte>.github.io/<dépôt>/ (ou racine pour <compte>.github.io / domaine perso)
+      - name: Calculer l'adresse de publication
+        id: site
+        env:
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          OWNER="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            BASE="/"; URL="https://${CUSTOM_DOMAIN}"
+          elif [ "$(echo "$REPO" | tr '[:upper:]' '[:lower:]')" = "${OWNER}.github.io" ]; then
+            BASE="/"; URL="https://${OWNER}.github.io"
+          else
+            BASE="/${REPO}/"; URL="https://${OWNER}.github.io/${REPO}"
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Publication sur $URL (base $BASE)"
+
+      - name: Construire le site
+        env:
+          BASE_PATH: ${{ steps.site.outputs.base }}
+          SITE_URL: ${{ steps.site.outputs.url }}
+          VITE_CLOUD: "off" # pas de serveur sur GitHub Pages : sauvegarde en ligne désactivée
+        run: npm run build
+
+      - name: Préparer les fichiers Pages
+        env:
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+        run: |
+          touch dist/.nojekyll            # pas de traitement Jekyll
+          cp dist/index.html dist/404.html # page 404 = le jeu (utile si quelqu'un tape une mauvaise adresse)
+          if [ -n "$CUSTOM_DOMAIN" ]; then echo "$CUSTOM_DOMAIN" > dist/CNAME; fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

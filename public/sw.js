@@ -4,7 +4,10 @@
  * - navigation                       : réseau d'abord, repli sur la version en cache */
 const VERSION = 'v1'
 const CACHE = `potato-${VERSION}`
-const STATIC_PREFIXES = ['/textures/', '/decor/', '/hdri/', '/icons/', '/basis/']
+// base de publication déduite de la portée du SW (« / » ou « /nom-du-depot/ » sur GitHub Pages)
+const BASE = new URL(self.registration.scope).pathname
+const INDEX = `${BASE}index.html`
+const STATIC_PREFIXES = ['textures/', 'decor/', 'hdri/', 'icons/', 'basis/'].map((p) => BASE + p)
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -34,10 +37,10 @@ async function networkFirst(req) {
   const cache = await caches.open(CACHE)
   try {
     const res = await fetch(req)
-    if (res.ok) cache.put('/index.html', res.clone())
+    if (res.ok) cache.put(INDEX, res.clone())
     return res
   } catch {
-    return (await cache.match('/index.html')) || Response.error()
+    return (await cache.match(INDEX)) || Response.error()
   }
 }
 
@@ -47,6 +50,6 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
   if (req.mode === 'navigate') event.respondWith(networkFirst(req))
-  else if (url.pathname.startsWith('/assets/')) event.respondWith(cacheFirst(req))
+  else if (url.pathname.startsWith(`${BASE}assets/`)) event.respondWith(cacheFirst(req))
   else if (STATIC_PREFIXES.some((p) => url.pathname.startsWith(p))) event.respondWith(staleWhileRevalidate(req))
 })
