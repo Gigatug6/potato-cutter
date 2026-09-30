@@ -9,6 +9,9 @@ export const SKIN: Vec3 = [0.18, 0.10, 0.04]
 const STEP = 0.06
 const SAMPLES = 5
 
+export interface PieceColors { flesh: Vec3; skin: Vec3 }
+export const DEFAULT_COLORS: PieceColors = { flesh: FLESH, skin: SKIN }
+
 export interface Piece {
   geometry: BufferGeometry
   /** centre de la cellule (pour l'écartement) */
@@ -17,7 +20,7 @@ export interface Piece {
 }
 
 /** Construit la pièce « cellule ∩ patate » par rétraction des sommets sortants. Renvoie null pour une miette. */
-export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap): Piece | null {
+export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap, colors: PieceColors = DEFAULT_COLORS): Piece | null {
   const size: Vec3 = [cell.max[0] - cell.min[0], cell.max[1] - cell.min[1], cell.max[2] - cell.min[2]]
   const center: Vec3 = [cell.min[0] + size[0] / 2, cell.min[1] + size[1] / 2, cell.min[2] + size[2] / 2]
 
@@ -63,10 +66,10 @@ export function buildPieceGeometry(cell: Cell, shape: PotatoShape, peel: PeelMap
     }
     // position relative au centre de la cellule (le mesh est placé au centre)
     pos.setXYZ(v, p[0] - center[0], p[1] - center[1], p[2] - center[2])
-    let c = FLESH
+    let c = colors.flesh
     if (outer) {
       const l = Math.hypot(p[0], p[1], p[2]) || 1
-      c = peel.sample([p[0] / l, p[1] / l, p[2] / l]) ? FLESH : SKIN
+      c = peel.sample([p[0] / l, p[1] / l, p[2] / l]) ? colors.flesh : colors.skin
     }
     col[v * 3] = c[0]; col[v * 3 + 1] = c[1]; col[v * 3 + 2] = c[2]
   }

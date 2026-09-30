@@ -8,32 +8,46 @@ import { CUT_MODES, type CutModeId } from '../game/cutting/cutModes'
 import { CutPlan, cellsFromCuts, idealPositions, type AddCutResult, type Bounds, type Cuts } from '../game/cutting/cutPlan'
 import type { KnifeDef } from '../game/data/knives'
 import { PeelMap } from '../game/potato/peelMap'
+import { BAD_LOOKS, STARTER_POTATO_ID, potatoById, type BadKind, type PotatoKind } from '../game/data/potatoes'
 import { createPotatoShape, extentAlong, type Axis, type PotatoShape, type Vec3 } from '../game/potato/potatoShape'
 import { applyPrecision } from '../game/scoring/scoring'
 import { PiecesGroup } from './cutting/PiecesGroup'
 import { KnifeRig } from './knives/KnifeRig'
 import { PeelParticles } from './potato/PeelParticles'
-import { PotatoMesh } from './potato/PotatoMesh'
+import { autoPeelSpeed } from '../game/data/upgrades'
+import { radiusAt } from '../game/potato/potatoShape'
+import { PotatoMesh, type PotatoLook } from './potato/PotatoMesh'
 import { BOARD_TOP, buildKitchen } from './scene/Kitchen'
+import { Color, Mesh as ThreeMesh, SphereGeometry, ConeGeometry, MeshStandardMaterial } from 'three'
 import { createEnvironment } from './scene/env'
 import { loadTextures, type SceneTextures } from './scene/textures'
 
 export interface EngineEvents extends Record<string, unknown> {
   peelProgress: number
-  cut: { pieceCount: number; cutCount: number }
+  cut: { pieceCount: number; cutCount: number; screen: { x: number; y: number } }
   cutRejected: AddCutResult
   passComplete: Axis
   allCutsDone: undefined
   finished: { bounds: Bounds; cuts: Cuts }
   contextLost: undefined
+  fried: undefined
+}
+
+export interface RoundOptions {
+  kind?: PotatoKind
+  bad?: BadKind | null
+  /** facteur de taille (amélioration « grosses patates ») */
+  scale?: number
+  /** niveau de l'éplucheur automatique (0 = aucun) */
+  autoPeelLevel?: number
 }
 
 export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef }
 
-const POTATO_Y = BOARD_TOP + 0.95
+const DEFAULT_POTATO_Y = BOARD_TOP + 0.95
 const CAM_PEEL = new Vector3(0, 3.6, 5)
 const CAM_CUT = new Vector3(0, 4.2, 3.4)
-const LOOK = new Vector3(0, POTATO_Y - 0.2, 0)
+const LOOK = new Vector3(0, DEFAULT_POTATO_Y - 0.2, 0)
 const AXIS_ROT: Record<Axis, Quaternion> = {
   x: new Quaternion(),
   y: new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2)),
@@ -81,6 +95,18 @@ export class Engine {
   private camBase: Vector3 = CAM_PEEL
   private shake = 0
   frames = 0
+  private fryTarget = new Vector3()
+  private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
+  private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
+  private readonly oilFx = new PeelParticles('#ffd27a', 0.05, 2)
+  private robot: ThreeMesh | null = null
+  private autoPeelLevel = 0
+  private autoT = 0
+  private autoLast: Vec3 | null = null
+  private autoAcc = 0
+  private fryToken = 0
+  private skipFry = false
+  private colors = { flesh: [0.72, 0.6, 0.3] as Vec3, skin: [0.18, 0.1, 0.04] as Vec3 }
 
   constructor(private readonly container: HTMLElement, opts: EngineOptions) {
     this.knife = opts.knife
@@ -94,17 +120,19 @@ export class Engine {
     container.appendChild(this.canvas)
 
     this.tex = loadTextures(this.renderer)
-    buildKitchen(this.scene, this.tex)
+    this.fryTarget = buildKitchen(this.scene, this.tex)
     this.env = createEnvironment(this.renderer)
     this.scene.environment = this.env
     this.scene.environmentIntensity = 0.6
-    this.potatoGroup.position.set(0, POTATO_Y, 0)
+    this.potatoGroup.position.set(0, DEFAULT_POTATO_Y, 0)
     this.potatoGroup.add(this.pieces.group)
-    this.scene.add(this.potatoGroup, this.particles.points)
+    this.scene.add(this.potatoGroup, this.particles.points, this.juice.points, this.coins.points, this.oilFx.points)
+    this.robot = this.buildRobot()
+    this.scene.add(this.robot)
     this.rig = new KnifeRig(this.knife)
     this.scene.add(this.rig.group)
     this.guide = new Mesh(new BoxGeometry(0.012, 1.6, 1.8), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false }))
-    this.guide.position.y = POTATO_Y
+    this.guide.position.y = DEFAULT_POTATO_Y
     this.guide.visible = false
     this.scene.add(this.guide)
 
@@ -131,17 +159,27 @@ export class Engine {
 
   // ---------- API publique ----------
 
-  startRound(modeId: CutModeId, seed: number): void {
+  startRound(modeId: CutModeId, seed: number, opts: RoundOptions = {}): void {
     this.clearRound()
-    this.shape = createPotatoShape(seed)
+    const kind = opts.kind ?? potatoById(STARTER_POTATO_ID)!
+    const look: PotatoLook = opts.bad ? BAD_LOOKS[opts.bad] : kind
+    this.colors = { flesh: look.flesh, skin: look.skinPiece }
+    this.pieces.colors = this.colors
+    this.shape = createPotatoShape(seed, kind.radiiMult, opts.scale ?? 1)
     this.peel = new PeelMap()
-    this.potato = new PotatoMesh(this.shape, this.peel, this.tex)
+    this.potato = new PotatoMesh(this.shape, this.peel, this.tex, look)
+    this.autoPeelLevel = opts.autoPeelLevel ?? 0
+    this.autoT = 0
+    this.autoLast = null
     this.potatoGroup.add(this.potato.mesh)
     this.potatoGroup.quaternion.identity()
     this.targetQuat.identity()
     this.bounds = {
       x: extentAlong(this.shape, 'x'), y: extentAlong(this.shape, 'y'), z: extentAlong(this.shape, 'z'),
     }
+    // la patate repose sur la planche quelle que soit sa taille
+    this.potatoGroup.position.y = BOARD_TOP - this.bounds.y[0] + 0.01
+    this.guide.position.y = this.potatoGroup.position.y
     this.plan = new CutPlan(CUT_MODES[modeId], this.bounds)
     this.mode = 'peeling'
     this.controls.enabled = true
@@ -175,7 +213,9 @@ export class Engine {
     this.rebuildPieces()
     this.rig.chop(this.potatoGroup.position.x + pos, this.knife.stats.speed)
     if (!this.reducedMotion) this.shake = 0.08
-    this.events.emit('cut', { pieceCount: this.pieces.count, cutCount: plan.cutCount })
+    const worldX = this.potatoGroup.position.x + pos
+    this.juice.emit(new Vector3(worldX, this.potatoGroup.position.y, 0), 26, 1.6, 0.7)
+    this.events.emit('cut', { pieceCount: this.pieces.count, cutCount: plan.cutCount, screen: this.project(worldX, this.potatoGroup.position.y + 0.8, 0) })
     if (plan.passIndex !== before) {
       this.events.emit('passComplete', axis)
       if (plan.isComplete) this.events.emit('allCutsDone', undefined)
@@ -189,6 +229,20 @@ export class Engine {
     this.events.emit('finished', { bounds: this.bounds, cuts: this.plan.cuts })
     this.guide.visible = false
     this.mode = 'idle'
+    this.rig.show(false)
+    this.coins.emit(this.potatoGroup.position.clone(), 40, 2.2, 2.2)
+    const token = ++this.fryToken
+    if (this.skipFry || this.reducedMotion || this.pieces.count === 0) {
+      this.events.emit('fried', undefined)
+      return
+    }
+    this.pieces.launch(this.scene, this.fryTarget, (p) => this.oilFx.emit(p, 2, 0.5, 1.4), () => {
+      if (token === this.fryToken) this.events.emit('fried', undefined)
+    })
+  }
+
+  setSkipFry(v: boolean): void {
+    this.skipFry = v
   }
 
   /** Mode « tourner » : glisser fait pivoter la patate elle-même (aussi : clic droit ou Maj + glisser). */
@@ -242,6 +296,7 @@ export class Engine {
   // ---------- interne ----------
 
   private clearRound(): void {
+    this.fryToken++
     this.pieces.clear()
     if (this.potato) {
       this.potatoGroup.remove(this.potato.mesh)
@@ -280,7 +335,7 @@ export class Engine {
   /** x monde du pointeur sur le plan horizontal de la patate. */
   private cutWorldX(): number | null {
     const p = new Vector3()
-    const hit = this.raycaster.ray.intersectPlane(new Plane(new Vector3(0, 1, 0), -POTATO_Y), p)
+    const hit = this.raycaster.ray.intersectPlane(new Plane(new Vector3(0, 1, 0), -this.potatoGroup.position.y), p)
     return hit ? p.x : null
   }
 
@@ -335,6 +390,7 @@ export class Engine {
         const lx = x - this.potatoGroup.position.x
         this.guide.visible = lx > min && lx < max
         this.guide.position.x = x
+        this.rig.hoverAt(x)
       }
     }
   }
@@ -390,6 +446,46 @@ export class Engine {
     this.camTarget = this.fitted(base)
   }
 
+  private project(x: number, y: number, z: number): { x: number; y: number } {
+    const v = new Vector3(x, y, z).project(this.camera)
+    return { x: ((v.x + 1) / 2) * this.container.clientWidth, y: ((1 - v.y) / 2) * this.container.clientHeight }
+  }
+
+  private buildRobot(): ThreeMesh {
+    const body = new ThreeMesh(new SphereGeometry(0.12, 12, 8), new MeshStandardMaterial({ color: new Color('#c8ccd0'), metalness: 0.8, roughness: 0.3 }))
+    const blade = new ThreeMesh(new ConeGeometry(0.05, 0.22, 8), new MeshStandardMaterial({ color: '#e04040', metalness: 0.6, roughness: 0.3 }))
+    blade.position.y = -0.17
+    body.add(blade)
+    body.visible = false
+    return body
+  }
+
+  /** Éplucheur automatique : un petit robot balaie la surface en spirale. */
+  private autoPeel(dt: number): void {
+    if (this.autoPeelLevel <= 0 || !this.potato || !this.shape) return
+    this.autoT += dt * autoPeelSpeed(this.autoPeelLevel) * 1.5
+    const t = this.autoT
+    const lon = t * 3.3, lat = Math.sin(t * 0.77) * 1.25
+    const dir: Vec3 = [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)]
+    const added = this.autoLast ? this.peel.paintStroke(this.autoLast, dir, 0.2) : this.peel.paint(dir, 0.2)
+    this.autoLast = dir
+    const r = radiusAt(this.shape, dir) * 1.12
+    const world = this.potatoGroup.localToWorld(new Vector3(dir[0] * r, dir[1] * r, dir[2] * r))
+    if (this.robot) {
+      this.robot.visible = true
+      this.robot.position.copy(world).add(new Vector3(0, 0.25, 0))
+    }
+    if (added > 0) {
+      this.autoAcc += dt
+      if (this.autoAcc > 0.08) {
+        this.autoAcc = 0
+        this.potato.refresh()
+        this.particles.emit(world, 2)
+        this.events.emit('peelProgress', this.peel.coverage())
+      }
+    }
+  }
+
   private resize(): void {
     const w = this.container.clientWidth || 1
     const h = this.container.clientHeight || 1
@@ -402,7 +498,8 @@ export class Engine {
   }
 
   private readonly tick = (): void => {
-    const dt = Math.min(0.05, this.clock.getDelta())
+    const raw = this.clock.getDelta()
+    const dt = Math.min(0.05, raw)
     this.frames++
     this.potatoGroup.quaternion.slerp(this.targetQuat, 1 - Math.exp(-10 * dt))
     if (this.camTarget) {
@@ -410,7 +507,12 @@ export class Engine {
       if (this.camera.position.distanceTo(this.camTarget) < 0.01) this.camTarget = null
       this.controls.target.copy(LOOK)
     }
-    this.pieces.update(dt)
+    if (this.mode === 'peeling' && !this.peeling && !this.rotating) this.autoPeel(dt)
+    else if (this.robot) this.robot.visible = false
+    this.pieces.update(dt, Math.min(0.25, raw))
+    this.juice.update(dt)
+    this.coins.update(dt)
+    this.oilFx.update(dt)
     this.rig.update(dt)
     this.particles.update(dt)
     if (this.shake > 0) {
@@ -434,6 +536,10 @@ export class Engine {
     this.clearRound()
     this.pieces.dispose()
     this.particles.dispose()
+    this.juice.dispose()
+    this.coins.dispose()
+    this.oilFx.dispose()
+    this.robot?.geometry.dispose()
     this.rig.dispose()
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()

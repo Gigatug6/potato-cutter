@@ -77,7 +77,8 @@ describe('game — phase 6', () => {
     const g = useGameStore(), p = useProfileStore()
     p.orders = [
       { id: 'a', dishId: 'chips', mode: 'rondelles', minGrade: 'D', multiplier: 2, label: 'Chips' },
-      ...p.orders.slice(0, 2),
+      { id: 'b', dishId: 'puree', mode: 'des', minGrade: 'D', multiplier: 1.4, label: 'Purée' },
+      { id: 'c', dishId: 'salade', mode: 'des', minGrade: 'A', multiplier: 2.5, label: 'Salade' },
     ]
     g.startRound('rondelles', 42, null)
     g.setPeelCoverage(1); g.goToCutting()

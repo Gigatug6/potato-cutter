@@ -84,3 +84,54 @@ export function playCoin(): void {
     o.stop(t + 0.26)
   })
 }
+
+/** Erreur / coupe refusée : court « buzz » grave. */
+export function playError(): void {
+  const c = audio()
+  if (!c) return
+  const o = c.createOscillator()
+  const g = c.createGain()
+  o.type = 'square'
+  o.frequency.value = 110
+  g.gain.setValueAtTime(0.12, c.currentTime)
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.14)
+  o.connect(g).connect(c.destination)
+  o.start()
+  o.stop(c.currentTime + 0.15)
+}
+
+/** Friture : bruit blanc filtré, plus long. */
+export function playSizzle(): void {
+  const c = audio()
+  if (!c) return
+  const src = c.createBufferSource()
+  src.buffer = noiseBuffer(c)
+  const f = c.createBiquadFilter()
+  f.type = 'highpass'
+  f.frequency.value = 3500
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.18, c.currentTime)
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.3)
+  src.connect(f).connect(g).connect(c.destination)
+  src.start()
+  src.stop(c.currentTime + 0.31)
+}
+
+/** Achat / déblocage : petit arpège montant. */
+export function playBuy(): void {
+  const c = audio()
+  if (!c) return
+  ;[523, 659, 784, 1047].forEach((freq, i) => {
+    const o = c.createOscillator()
+    const g = c.createGain()
+    o.type = 'triangle'
+    o.frequency.value = freq
+    const t = c.currentTime + i * 0.07
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.01)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+    o.connect(g).connect(c.destination)
+    o.start(t)
+    o.stop(t + 0.21)
+  })
+}

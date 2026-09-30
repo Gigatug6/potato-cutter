@@ -5,6 +5,7 @@ export default defineConfig({
   outputDir: './artifacts/test-results',
   reporter: 'list',
   timeout: 60_000,
+  expect: { timeout: 10_000 },
   use: {
     ...devices['Desktop Chrome'],
     baseURL: process.env.BASE_URL ?? 'http://localhost:5173',

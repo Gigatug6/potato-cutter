@@ -1,10 +1,11 @@
 import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import type { SceneTextures } from '../scene/textures'
+
+export interface PotatoLook { skinTint: Vec3; flesh: Vec3; skinPiece: Vec3 }
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import { createRng } from '../../game/core/rng'
 import type { PeelMap } from '../../game/potato/peelMap'
 import { radiusAt, type PotatoShape, type Vec3 } from '../../game/potato/potatoShape'
-import { FLESH } from '../../game/cutting/pieceGeometry'
 
 const PEELED_INSET = 0.985
 
@@ -17,7 +18,7 @@ export class PotatoMesh {
   private readonly skin: Float32Array
   private readonly peelAttr: BufferAttribute
 
-  constructor(shape: PotatoShape, private readonly peel: PeelMap, tex: SceneTextures) {
+  constructor(shape: PotatoShape, private readonly peel: PeelMap, tex: SceneTextures, look: PotatoLook) {
     const base = new IcosahedronGeometry(1, 20)
     base.rotateZ(Math.PI / 2) // pôles d'UV aux extrémités (axe long) plutôt que sur le dessus
     base.deleteAttribute('normal')
@@ -48,9 +49,9 @@ export class PotatoMesh {
     this.geo.setAttribute('aPeel', this.peelAttr)
     const mat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9, map: tex.skinDiff, normalMap: tex.skinNor })
     mat.normalScale.set(1.2, 1.2)
-    const flesh = new Vector3(FLESH[0], FLESH[1], FLESH[2])
+    const flesh = new Vector3(...look.flesh)
     // la boue (texture) est sombre : on la réchauffe et l'éclaircit pour donner une peau de patate
-    const skinTint = new Vector3(2.5, 1.85, 1.05)
+    const skinTint = new Vector3(...look.skinTint)
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uFlesh = { value: flesh }
       sh.uniforms.uSkinTint = { value: skinTint }

@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Prochaine étape : 6.3 moteur (variétés, pourrie, éplucheur auto, couteau visible, friteuse, jus)** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 6.4 UI (menu, boutique à onglets + aperçu 3D, classement, Jeter, chrono)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -45,7 +45,7 @@
 ## Phase 6 — les 9 suggestions (demande utilisateur)
 - [x] 6.1 Modules purs + schéma de sauvegarde : patates (1), commandes (2), améliorations (3), quêtes (6), classement (5), équilibrage (9)
 - [x] 6.2 Stores : profile étendu, game (chrono, commande livrée, patate pourrie, résultats différés)
-- [ ] 6.3 Moteur : variétés de patates + patate pourrie/verte (8), améliorations (éplucheur auto, grosses patates), couteau visible qui suit le pointeur (4), friteuse (8), jus : particules, nombres flottants, sons (7)
+- [x] 6.3 Moteur : variétés de patates + patate pourrie/verte (8), améliorations (éplucheur auto, grosses patates), couteau visible qui suit le pointeur (4), friteuse (8), jus : particules, nombres flottants, sons (7)
 - [ ] 6.4 UI : choix de patate + commandes + quêtes + chrono au menu, boutique à onglets (couteaux/patates/améliorations) avec aperçu 3D rotatif (4), classement, bouton Jeter
 - [ ] 6.5 e2e des nouveautés + vérification finale
 
@@ -107,3 +107,6 @@
 
 ### 2026-09-30 — 6.1/6.2
 - Modules purs (potatoes, upgrades, orders, quests, leaderboard) + schéma de sauvegarde tolérant + stores étendus (chrono, commandes, quêtes, patate pourrie, Jeter). Gains rééquilibrés (base 25/70/150). 92 tests verts. Seed e2e dés passée de 7 à 8 (7 = patate pourrie).
+
+### 2026-09-30 — 6.3 moteur
+- Variétés (teinte/chair par type), patates verte/pourrie, éplucheur auto (robot en spirale), grosses patates, couteau en survol qui suit le pointeur, friteuse (pièces en arc dans le bac), particules jus/pièces/huile, nombres flottants, sons (erreur, friture, achat). Captures relues : couteau visible, friteuse OK, patate verte OK, violette un peu trop claire (teinte assombrie).

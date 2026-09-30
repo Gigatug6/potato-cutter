@@ -28,7 +28,7 @@ export const POTATOES: PotatoKind[] = [
   { id: 'rouge', name: 'Désirée', description: 'Peau rouge, chair crème.', valueMult: 1.7, price: 900,
     radiiMult: [1.05, 0.95, 0.9], skinTint: [3.2, 1.2, 0.9], flesh: [0.75, 0.68, 0.45], skinPiece: [0.3, 0.06, 0.04] },
   { id: 'violette', name: 'Vitelotte', description: 'Violette de part en part.', valueMult: 2.4, price: 2500,
-    radiiMult: [1.1, 0.8, 0.8], skinTint: [1.3, 1.0, 2.4], flesh: [0.35, 0.12, 0.45], skinPiece: [0.08, 0.04, 0.14] },
+    radiiMult: [1.1, 0.8, 0.8], skinTint: [0.55, 0.32, 0.95], flesh: [0.35, 0.12, 0.45], skinPiece: [0.08, 0.04, 0.14] },
   { id: 'douce', name: 'Patate douce', description: 'Chair orange, très sucrée.', valueMult: 3.2, price: 6000,
     radiiMult: [1.05, 0.9, 0.9], skinTint: [3.2, 1.6, 0.9], flesh: [0.85, 0.35, 0.06], skinPiece: [0.4, 0.12, 0.05] },
   { id: 'doree', name: 'Patate dorée', description: 'Une légende des potagers.', valueMult: 5, price: 15000,

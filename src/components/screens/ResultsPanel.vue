@@ -12,7 +12,7 @@ function again() {
 </script>
 
 <template>
-  <div v-if="r && game.phase === 'results'" class="results" data-testid="results">
+  <div v-if="r && game.phase === 'results' && game.resultsVisible" class="results" data-testid="results">
     <div class="panel card">
       <h2>Patate terminée !</h2>
       <div class="grade" :data-grade="r.grade">{{ r.grade }}</div>
