@@ -31,11 +31,13 @@ const modeLabel = computed(() => (game.round ? CUT_MODES[game.round.mode].label 
     <div class="chip" data-testid="peel">Épluché {{ peelPct }} %</div>
     <div class="chip" data-testid="cuts">Coupes {{ cutsLabel }}</div>
     <div class="chip">🔪 {{ profile.equippedKnife.name }}</div>
+    <div v-if="profile.stats.streak >= 2" class="chip combo" data-testid="combo">🔥 Série ×{{ profile.stats.streak }}</div>
   </header>
 </template>
 
 <style scoped>
 .hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.combo { background: #ffd36a; font-weight: 800; }
 .chip { background: var(--panel); padding: 6px 12px; border-radius: 999px; box-shadow: var(--shadow); font-size: 0.9rem; }
 @media (max-width: 600px) { .chip { padding: 4px 8px; font-size: 0.78rem; } }
 </style>

@@ -24,6 +24,7 @@ export interface EngineEvents extends Record<string, unknown> {
   passComplete: Axis
   allCutsDone: undefined
   finished: { bounds: Bounds; cuts: Cuts }
+  contextLost: undefined
 }
 
 export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef }
@@ -111,6 +112,7 @@ export class Engine {
     this.controls.enableDamping = true
     this.controls.update()
 
+    this.canvas.addEventListener('webglcontextlost', this.onContextLost)
     this.canvas.addEventListener('pointerdown', this.onDown)
     this.canvas.addEventListener('pointermove', this.onMove)
     window.addEventListener('pointerup', this.onUp)
@@ -272,6 +274,12 @@ export class Engine {
 
   private downAt = new Vector2()
 
+  private readonly onContextLost = (e: Event): void => {
+    e.preventDefault()
+    this.renderer.setAnimationLoop(null)
+    this.events.emit('contextLost', undefined)
+  }
+
   private readonly onDown = (e: PointerEvent): void => {
     this.downAt.set(e.clientX, e.clientY)
     if (this.mode !== 'peeling') return
@@ -382,6 +390,7 @@ export class Engine {
   dispose(): void {
     this.renderer.setAnimationLoop(null)
     this.resizeObs.disconnect()
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLost)
     this.canvas.removeEventListener('pointerdown', this.onDown)
     this.canvas.removeEventListener('pointermove', this.onMove)
     window.removeEventListener('pointerup', this.onUp)
