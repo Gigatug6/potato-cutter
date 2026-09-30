@@ -5,6 +5,7 @@ import { autoPeelSpeed, potatoScale } from '../game/data/upgrades'
 import { installDebug } from '../debug'
 import { effectiveQuality } from '../quality'
 import { music } from '../audio/music'
+import { shareCapture } from '../share'
 import { decorById } from '../game/data/decor'
 import { Engine } from '../engine/Engine'
 import { engineRef } from '../engine/bridge'
@@ -111,7 +112,16 @@ function launch(r: NonNullable<typeof game.round>) {
 }
 
 const rtStart = () => { void engine?.startPhoto() }
-const rtSave = () => { engine?.savePhoto() }
+const toast = ref('')
+async function shot() {
+  if (!engine) return
+  const url = await engine.captureImage()
+  const r = await shareCapture(url)
+  profile.bump('photos')
+  toast.value = r === 'shared' ? 'Capture partagée !' : 'Capture enregistrée !'
+  setTimeout(() => (toast.value = ''), 2500)
+}
+const rtSave = () => { void shot() }
 const rtStop = () => { engine?.stopPhoto() }
 
 const reload = () => window.location.reload()
@@ -141,13 +151,15 @@ onBeforeUnmount(() => {
   </div>
   <div v-if="game.screen === 'game' && game.phase !== 'idle'" class="photo-ui">
     <template v-if="!photo.active">
+      <button class="ghost rt" data-testid="shot" title="Capturer et partager" @click="shot">📸 Capturer</button>
       <button class="ghost rt" data-testid="rt-start" @click="rtStart">📷 Ray tracing</button>
     </template>
     <template v-else>
       <span class="chip" data-testid="rt-status">{{ photo.compiling ? 'Compilation des shaders…' : `Path tracing : ${photo.samples} échantillons` }}</span>
-      <button class="ghost rt" data-testid="rt-save" @click="rtSave">💾 PNG</button>
+      <button class="ghost rt" data-testid="rt-save" @click="rtSave">📸 Partager</button>
       <button class="rt" data-testid="rt-stop" @click="rtStop">Retour au jeu</button>
     </template>
+    <span v-if="toast" class="chip" data-testid="shot-toast">{{ toast }}</span>
     <span v-if="photo.error" class="chip err" data-testid="rt-error">{{ photo.error }}</span>
   </div>
   <div v-if="lost" class="lost" data-testid="context-lost">

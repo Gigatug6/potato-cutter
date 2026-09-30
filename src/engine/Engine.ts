@@ -440,6 +440,19 @@ export class Engine {
     if (this.photo) this.photo.wantSave = true
   }
 
+  private captureResolvers: ((url: string) => void)[] = []
+
+  /** Capture l'image affichée (rendu temps réel ou path tracing) sous forme de data URL PNG. */
+  captureImage(): Promise<string> {
+    return new Promise((resolve) => this.captureResolvers.push(resolve))
+  }
+
+  private flushCaptures(): void {
+    if (!this.captureResolvers.length) return
+    const url = this.canvas.toDataURL('image/png') // lu juste après le rendu, tampon encore valide
+    this.captureResolvers.splice(0).forEach((r) => r(url))
+  }
+
   /** Décors équipés (planche, mur, ambiance, objets). */
   setDecor(ids: string[]): void {
     this.kitchen.apply(ids)
@@ -707,6 +720,7 @@ export class Engine {
     const moved = !p.lastCam.equals(this.camera.position) || !p.lastQuat.equals(this.camera.quaternion)
     if (moved) { p.lastCam.copy(this.camera.position); p.lastQuat.copy(this.camera.quaternion) }
     p.session.frame(moved)
+    this.flushCaptures()
     if (p.wantSave) {
       p.wantSave = false
       const a = document.createElement('a')
@@ -755,6 +769,7 @@ export class Engine {
       this.fx.setFocus(this.camera.position.distanceTo(this.potatoGroup.position))
       this.fx.render(raw)
     } else this.renderer.render(this.scene, this.camera)
+    this.flushCaptures()
   }
 
   dispose(): void {
