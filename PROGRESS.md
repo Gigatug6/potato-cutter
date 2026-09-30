@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : 3 — Moteur 3D
-- **Prochaine étape : 3.1 Engine + Kitchen + GameCanvas** (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : 4 — UI
+- **Prochaine étape : 4.1 Menu/HUD/Résultats (UI Vue)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -25,12 +25,12 @@
 - [x] 2.1 profile + persist
 - [x] 2.2 game
 ### Phase 3 — Moteur 3D
-- [ ] 3.1 Engine + Kitchen
-- [ ] 3.2 PotatoMesh
-- [ ] 3.3 Épluchage
-- [ ] 3.4 Couteaux 3D
-- [ ] 3.5 Découpe 1 passe
-- [ ] 3.6 Multi-passes + fin de manche
+- [x] 3.1 Engine + Kitchen
+- [x] 3.2 PotatoMesh
+- [x] 3.3 Épluchage
+- [x] 3.4 Couteaux 3D
+- [x] 3.5 Découpe 1 passe
+- [x] 3.6 Multi-passes + fin de manche
 ### Phase 4 — UI
 - [ ] 4.1 Menu/HUD/Résultats
 - [ ] 4.2 Boutique/Caisse
@@ -50,6 +50,9 @@
 - D4 : hôte `app` refusé par Chromium (TLD `.app` en HSTS) → alias réseau `vite` pour l'e2e.
 - D5 : Makefile ajouté (init, dev, up, check, e2e, sh, npm, clean).
 
+- D6 : la coupe se déclenche par clic/tap à la position du pointeur (plus robuste que le swipe vertical du plan) ; le couteau est animé au moment de la coupe.
+- D7 : borne de taille des couteaux relâchée à 3 (borne heuristique arbitraire, pas une contrainte de jeu).
+
 ## Blocages / dettes
 - (aucun)
 
@@ -65,3 +68,9 @@
 
 ### 2026-09-30 — Phase 2
 - Stores profile/game/persist, 52 tests verts.
+
+### 2026-09-30 — Phase 3 (moteur 3D)
+- Engine, PotatoMesh, épluchage (copeaux), couteaux procéduraux, découpe rondelles/frites/dés, API window.__potato.
+- 64 tests unitaires + 4 e2e verts (smoke, peel, cut, dice).
+- Captures relues : patate brune avec yeux ; zone épluchée jaune avec copeaux ; rondelles séparées à chair claire ; dés en grille 3D (~150 pièces).
+- Reste à soigner : couteau peu visible (repos hors champ), guide de coupe un peu grossier.
