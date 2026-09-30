@@ -5,7 +5,7 @@ test('la page charge, WebGL rend des frames, sans erreur console', async ({ page
   const errors = await open(page)
   await expect(page).toHaveTitle(/Potato/)
   await api(page, 'startRound', 'rondelles', 42)
-  await page.waitForTimeout(800)
+  await page.waitForFunction(() => (window as any).__potato.getState().frames > 10, null, { timeout: 15000 })
   const s = await state(page)
   expect(s.frames).toBeGreaterThan(10)
   expect(s.triangles).toBeGreaterThan(5000)

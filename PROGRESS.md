@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : 4 — UI
-- **Prochaine étape : 4.4 Mobile/tactile (e2e viewport 390x844)** (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : 5 — Finitions
+- **Prochaine étape : 5.1 Audio WebAudio** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -35,7 +35,7 @@
 - [x] 4.1 Menu/HUD/Résultats
 - [x] 4.2 Boutique/Caisse
 - [x] 4.3 Collection/Réglages
-- [ ] 4.4 Mobile/tactile
+- [x] 4.4 Mobile/tactile
 ### Phase 5 — Finitions
 - [ ] 5.1 Audio
 - [ ] 5.2 Juice
@@ -82,3 +82,7 @@
 - Boutique (vignettes 3D via renderer partagé + RoomEnvironment), caisse, collection, réglages. 66 tests + 8 e2e verts.
 - Captures relues : boutique OK (couleurs de rareté, lames métal avec reflets). Bug corrigé : couteau décentré (inner.position.z) et métal noir sans envMap.
 - D8 : pas d'aperçu rotatif en boutique (vignettes statiques seulement).
+
+### 2026-09-30 — 4.4
+- Caméra qui recule sur écran étroit, e2e mobile 390x844 (tap/pointer tactile) vert ; 9 e2e verts.
+- Fog éloigné (la patate paraissait délavée en mobile). Smoke rendu robuste (waitForFunction frames).

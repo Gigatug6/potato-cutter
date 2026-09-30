@@ -72,6 +72,7 @@ export class Engine {
   private lastProgress = 0
   private targetQuat = new Quaternion()
   private camTarget: Vector3 | null = null
+  private camBase: Vector3 = CAM_PEEL
   private shake = 0
   frames = 0
 
@@ -105,7 +106,7 @@ export class Engine {
     this.controls.target.copy(LOOK)
     this.controls.enablePan = false
     this.controls.minDistance = 3
-    this.controls.maxDistance = 9
+    this.controls.maxDistance = 16
     this.controls.maxPolarAngle = Math.PI / 2.2
     this.controls.enableDamping = true
     this.controls.update()
@@ -135,7 +136,7 @@ export class Engine {
     this.plan = new CutPlan(CUT_MODES[modeId], this.bounds)
     this.mode = 'peeling'
     this.controls.enabled = true
-    this.camTarget = CAM_PEEL
+    this.setCamBase(CAM_PEEL)
     this.rig.show(false)
     this.guide.visible = false
     this.events.emit('peelProgress', 0)
@@ -146,7 +147,7 @@ export class Engine {
     this.mode = 'cutting'
     this.peeling = false
     this.controls.enabled = false
-    this.camTarget = CAM_CUT
+    this.setCamBase(CAM_CUT)
     this.alignToCurrentAxis()
     this.rig.show(true)
   }
@@ -335,6 +336,17 @@ export class Engine {
     }
   }
 
+  /** Recule la caméra sur écran étroit pour garder la patate entière visible. */
+  private fitted(base: Vector3): Vector3 {
+    const k = Math.max(1, 0.75 / this.camera.aspect)
+    return LOOK.clone().add(base.clone().sub(LOOK).multiplyScalar(k))
+  }
+
+  private setCamBase(base: Vector3): void {
+    this.camBase = base
+    this.camTarget = this.fitted(base)
+  }
+
   private resize(): void {
     const w = this.container.clientWidth || 1
     const h = this.container.clientHeight || 1
@@ -343,6 +355,7 @@ export class Engine {
     this.canvas.style.height = '100%'
     this.camera.aspect = w / h
     this.camera.updateProjectionMatrix()
+    if (this.mode !== 'idle') this.camTarget = this.fitted(this.camBase)
   }
 
   private readonly tick = (): void => {

@@ -7,7 +7,7 @@ export const BOARD_TOP = 0.1
 /** Décor : planche en bois, sol, lumières. */
 export function buildKitchen(scene: Scene): void {
   scene.background = new Color('#f4e3c8')
-  scene.fog = new Fog('#f4e3c8', 12, 28)
+  scene.fog = new Fog('#f4e3c8', 25, 55)
 
   scene.add(new HemisphereLight('#fff6e5', '#8a6a4a', 1.1))
   const sun = new DirectionalLight('#fffbe8', 2.2)
