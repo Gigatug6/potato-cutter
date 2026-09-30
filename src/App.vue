@@ -5,8 +5,10 @@ import HudBar from './components/hud/HudBar.vue'
 import PhaseActions from './components/hud/PhaseActions.vue'
 import MainMenu from './components/screens/MainMenu.vue'
 import ResultsPanel from './components/screens/ResultsPanel.vue'
-import { defineAsyncComponent, watch } from 'vue'
+import { defineAsyncComponent, onMounted, watch } from 'vue'
+import { setLanguage } from './i18n/dom'
 import { useGameStore } from './stores/game'
+import { useProfileStore } from './stores/profile'
 
 // écrans secondaires chargés à la demande (boutique 3D, collection, réglages, fin de chrono)
 const ShopView = defineAsyncComponent(() => import('./components/screens/ShopView.vue'))
@@ -15,6 +17,10 @@ const SettingsPanel = defineAsyncComponent(() => import('./components/screens/Se
 const ChallengeResult = defineAsyncComponent(() => import('./components/screens/ChallengeResult.vue'))
 
 const game = useGameStore()
+const profile = useProfileStore()
+// langue : traducteur DOM (FR source → EN), voir src/i18n
+watch(() => profile.settings.lang, (l) => setLanguage(l), { immediate: false })
+onMounted(() => { if (profile.settings.lang !== 'fr') setLanguage(profile.settings.lang) })
 
 const TITLES: Record<string, string> = {
   menu: 'Potato Cutter — simulateur 3D de découpe de patates en ligne (gratuit)',

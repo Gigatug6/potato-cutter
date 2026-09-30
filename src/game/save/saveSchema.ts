@@ -9,6 +9,10 @@ import type { QuestState } from '../quests/quests'
 import type { ScoreEntry } from '../scoring/leaderboard'
 
 export type Quality = 'low' | 'high' | 'ultra'
+export type Lang = 'fr' | 'en'
+
+/** Langue par défaut : français pour les navigateurs francophones, sinon anglais. */
+export const detectLang = (): Lang => (typeof navigator !== 'undefined' && !(navigator.language ?? 'fr').toLowerCase().startsWith('fr') ? 'en' : 'fr')
 export const QUALITIES: Quality[] = ['low', 'high', 'ultra']
 
 export interface Counters { sGrades: number; ordersDelivered: number; challenges: number; bestChallengeScore: number; photos: number; crates: number }
@@ -26,7 +30,7 @@ export interface SaveV1 {
     bestTimeMs: Record<CutModeId, number | null>
     streak: number
   }
-  settings: { sound: boolean; music: number; reducedMotion: boolean; pixelRatioCap: number; quality: Quality }
+  settings: { sound: boolean; lang: Lang; music: number; reducedMotion: boolean; pixelRatioCap: number; quality: Quality }
   // ajouts phase 6 (tous optionnels dans les anciennes sauvegardes, réparés par parseSave)
   unlockedPotatoes: string[]
   selectedPotatoId: string
@@ -53,7 +57,7 @@ export function defaultSave(): SaveV1 {
       bestGrade: { rondelles: null, frites: null, des: null },
       bestTimeMs: { rondelles: null, frites: null, des: null },
     },
-    settings: { sound: true, music: 0.3, reducedMotion: false, pixelRatioCap: 2, quality: 'high' },
+    settings: { sound: true, lang: detectLang(), music: 0.3, reducedMotion: false, pixelRatioCap: 2, quality: 'high' },
     unlockedPotatoes: [STARTER_POTATO_ID],
     selectedPotatoId: STARTER_POTATO_ID,
     upgrades: {},
@@ -99,6 +103,7 @@ export function parseSave(raw: unknown): SaveV1 {
   }
   if (isObj(raw.settings)) {
     s.settings.sound = typeof raw.settings.sound === 'boolean' ? raw.settings.sound : true
+    s.settings.lang = raw.settings.lang === 'fr' || raw.settings.lang === 'en' ? raw.settings.lang : detectLang()
     s.settings.music = typeof raw.settings.music === 'number' && Number.isFinite(raw.settings.music) ? Math.min(1, Math.max(0, raw.settings.music)) : 0.3
     s.settings.reducedMotion = typeof raw.settings.reducedMotion === 'boolean' ? raw.settings.reducedMotion : false
     s.settings.pixelRatioCap = num(raw.settings.pixelRatioCap, 2, 1, 3)

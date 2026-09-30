@@ -18,6 +18,7 @@ const modes = Object.values(CUT_MODES)
 <template>
   <div class="menu" data-testid="menu">
     <div class="top"><MoneyCounter /></div>
+    <button class="ghost lang" data-testid="lang-toggle" aria-label="Langue / Language" @click="profile.settings.lang = profile.settings.lang === 'fr' ? 'en' : 'fr'">🌐 {{ profile.settings.lang === 'fr' ? 'EN' : 'FR' }}</button>
     <div class="cols">
       <div class="panel box">
         <h1>🥔 Potato Cutter</h1>
@@ -53,6 +54,7 @@ const modes = Object.values(CUT_MODES)
 
 <style scoped>
 .menu { position: absolute; inset: 0; overflow-y: auto; pointer-events: auto; padding: 56px 12px 16px; }
+.lang { position: fixed; top: 8px; right: 8px; z-index: 2; padding: 6px 12px; background: var(--panel); }
 .top { position: fixed; top: 8px; left: 8px; z-index: 2; }
 .cols { display: flex; gap: 12px; justify-content: center; align-items: flex-start; flex-wrap: wrap; max-width: 960px; margin: 0 auto; }
 .box { text-align: center; flex: 1 1 340px; max-width: 460px; display: flex; flex-direction: column; gap: 12px; }

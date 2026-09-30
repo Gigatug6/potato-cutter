@@ -9,6 +9,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     ...devices['Desktop Chrome'],
+    locale: 'fr-FR', // la langue par défaut suit le navigateur : les tests restent en français
     baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
     launchOptions: {
       args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],

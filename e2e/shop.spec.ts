@@ -19,7 +19,8 @@ test('boutique : achat, équipement, persistance après reload, caisse, reset', 
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('potato-cutter:save')!))
   expect(saved.equippedKnifeId).toBe('chef-azur')
   expect(saved.ownedKnives['chef-azur']).toBeTruthy()
-  expect(saved.money).toBeLessThanOrEqual(20000 - 2000) // un doublon « rare » rembourse exactement le prix de la caisse
+  expect(saved.counters.crates).toBe(1) // la caisse a bien été ouverte (les succès créditent aussi des Patacoins : on ne compare plus le solde exact)
+  expect(saved.money).toBeLessThan(20000)
   expect(errors).toEqual([])
 })
 

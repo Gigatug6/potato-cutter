@@ -35,7 +35,7 @@ onMounted(() => {
   const sun = new DirectionalLight('#ffffff', 2.2)
   sun.position.set(3, 4, 2)
   scene.add(sun)
-  camera.position.set(0, 0.9, 4.4)
+  camera.position.set(0, 0.8, 3.3)
   camera.lookAt(0, 0.3, 0)
   setKnife(props.knife)
   const t0 = performance.now()
@@ -76,5 +76,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.preview { height: 190px; border-radius: 14px; background: radial-gradient(circle at 50% 40%, #fff6e0, #e7d2a8); margin-bottom: 10px; }
+.preview { height: 190px; max-width: 640px; margin-left: auto; margin-right: auto; border-radius: 14px; background: radial-gradient(circle at 50% 40%, #fff6e0, #e7d2a8); margin-bottom: 10px; }
 </style>

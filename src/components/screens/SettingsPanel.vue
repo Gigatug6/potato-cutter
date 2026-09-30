@@ -20,6 +20,11 @@ function reset() {
         <input v-model.number="profile.settings.music" type="range" min="0" max="1" step="0.05" data-testid="opt-music" aria-label="Volume de la musique" />
       </label>
       <label><input v-model="profile.settings.reducedMotion" type="checkbox" data-testid="opt-motion" /> Réduire les animations</label>
+      <label>Langue
+        <select v-model="profile.settings.lang" data-testid="opt-lang" aria-label="Langue / Language">
+          <option value="fr">Français</option><option value="en">English</option>
+        </select>
+      </label>
       <label>Qualité graphique
         <select v-model="profile.settings.quality" data-testid="opt-quality">
           <option value="low">Basse (rapide)</option><option value="high">Élevée (AO, bloom, cinéma)</option><option value="ultra">Ultra (+ profondeur de champ)</option>
