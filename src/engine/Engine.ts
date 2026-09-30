@@ -1,6 +1,6 @@
 import {
   BoxGeometry, Clock, Group, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, Quaternion, Raycaster,
-  Scene, Vector2, Vector3, WebGLRenderer, Euler,
+  Scene, Vector2, Vector3, WebGLRenderer, Euler, type Texture,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Emitter } from '../game/core/events'
@@ -15,6 +15,7 @@ import { KnifeRig } from './knives/KnifeRig'
 import { PeelParticles } from './potato/PeelParticles'
 import { PotatoMesh } from './potato/PotatoMesh'
 import { BOARD_TOP, buildKitchen } from './scene/Kitchen'
+import { createEnvironment } from './scene/env'
 
 export interface EngineEvents extends Record<string, unknown> {
   peelProgress: number
@@ -55,6 +56,7 @@ export class Engine {
   private readonly rig: KnifeRig
   private readonly guide: Mesh
   private readonly resizeObs: ResizeObserver
+  private readonly env: Texture
   private readonly canvas: HTMLCanvasElement
 
   private mode: Mode = 'idle'
@@ -85,6 +87,9 @@ export class Engine {
     container.appendChild(this.canvas)
 
     buildKitchen(this.scene)
+    this.env = createEnvironment(this.renderer)
+    this.scene.environment = this.env
+    this.scene.environmentIntensity = 0.6
     this.potatoGroup.position.set(0, POTATO_Y, 0)
     this.potatoGroup.add(this.pieces.group)
     this.scene.add(this.potatoGroup, this.particles.points)
@@ -374,6 +379,7 @@ export class Engine {
     this.rig.dispose()
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()
+    this.env.dispose()
     this.renderer.dispose()
     this.canvas.remove()
     this.events.clear()

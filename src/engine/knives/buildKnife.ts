@@ -83,7 +83,7 @@ export function buildKnife(def: KnifeDef): KnifeObject {
 
   // longueur (x) → axe z du monde ; épaisseur (z) → axe x du monde
   inner.rotation.y = Math.PI / 2
-  inner.position.z = -len / 2 // centré sur la patate
+  inner.position.z = len / 2 // lame centrée sur la patate, manche côté +z
   const group = new Group()
   group.add(inner)
 

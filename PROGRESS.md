@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 4 — UI
-- **Prochaine étape : 4.2 Boutique/Caisse** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 4.4 Mobile/tactile (e2e viewport 390x844)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -33,8 +33,8 @@
 - [x] 3.6 Multi-passes + fin de manche
 ### Phase 4 — UI
 - [x] 4.1 Menu/HUD/Résultats
-- [ ] 4.2 Boutique/Caisse
-- [ ] 4.3 Collection/Réglages
+- [x] 4.2 Boutique/Caisse
+- [x] 4.3 Collection/Réglages
 - [ ] 4.4 Mobile/tactile
 ### Phase 5 — Finitions
 - [ ] 5.1 Audio
@@ -77,3 +77,8 @@
 
 ### 2026-09-30 — 4.1
 - Menu, HUD, PhaseActions, ResultsPanel ; 66 tests + 5 e2e verts ; captures menu/résultats relues (OK).
+
+### 2026-09-30 — 4.2/4.3
+- Boutique (vignettes 3D via renderer partagé + RoomEnvironment), caisse, collection, réglages. 66 tests + 8 e2e verts.
+- Captures relues : boutique OK (couleurs de rareté, lames métal avec reflets). Bug corrigé : couteau décentré (inner.position.z) et métal noir sans envMap.
+- D8 : pas d'aperçu rotatif en boutique (vignettes statiques seulement).

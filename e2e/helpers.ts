@@ -12,7 +12,6 @@ export const api = <T>(page: Page, fn: string, ...args: unknown[]) =>
 export const shot = (page: Page, name: string) => page.screenshot({ path: `artifacts/screens/${name}.png` })
 
 export async function open(page: Page) {
-  await page.addInitScript(() => localStorage.clear())
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
