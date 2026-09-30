@@ -8,8 +8,8 @@ export function setSoundEnabled(v: boolean): void {
   enabled = v
 }
 
-function audio(): AudioContext | null {
-  if (!enabled) return null
+/** Contexte WebAudio partagé (effets + musique). */
+export function sharedContext(): AudioContext | null {
   try {
     const Ctor = globalThis.AudioContext ?? (globalThis as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!Ctor) return null
@@ -19,6 +19,10 @@ function audio(): AudioContext | null {
   } catch {
     return null
   }
+}
+
+function audio(): AudioContext | null {
+  return enabled ? sharedContext() : null
 }
 
 function noiseBuffer(c: AudioContext): AudioBuffer {

@@ -4,6 +4,8 @@ import { playChop, playCoin, playError, playScratch, playSizzle, setSoundEnabled
 import { autoPeelSpeed, potatoScale } from '../game/data/upgrades'
 import { installDebug } from '../debug'
 import { effectiveQuality } from '../quality'
+import { music } from '../audio/music'
+import { decorById } from '../game/data/decor'
 import { Engine } from '../engine/Engine'
 import { engineRef } from '../engine/bridge'
 import { useGameStore } from '../stores/game'
@@ -34,8 +36,20 @@ onMounted(() => {
   }))
 })
 
+function moodId(ids: string[]): string {
+  return ids.find((i) => decorById(i)?.category === 'mood') ?? 'mood-studio'
+}
+
+// la musique démarre au premier geste (politique d'autoplay des navigateurs)
+function armMusic() {
+  const go = () => { music.setMood(moodId(profile.decorEquipped)); music.setVolume(profile.settings.music); music.start() }
+  window.addEventListener('pointerdown', go, { once: true })
+  window.addEventListener('keydown', go, { once: true })
+}
+
 function init() {
   if (engine || !host.value) return
+  armMusic()
   setSoundEnabled(profile.settings.sound)
   engine = markRaw(new Engine(host.value!, {
     knife: profile.equippedKnife,
@@ -79,7 +93,8 @@ watch(() => game.phase, (p) => { if (p === 'cutting') engine?.beginCutting() })
 // écrans opaques : on coupe le rendu 3D (économie GPU/batterie)
 watch(() => game.screen, (sc) => engine?.setPaused(sc === 'shop' || sc === 'collection' || sc === 'settings'))
 watch(() => profile.settings.quality, (q) => engine?.setQuality(effectiveQuality(q)))
-watch(() => [...profile.decorEquipped], (ids) => engine?.setDecor(ids))
+watch(() => [...profile.decorEquipped], (ids) => { engine?.setDecor(ids); music.setMood(moodId(ids)) })
+watch(() => profile.settings.music, (v) => { music.setVolume(v); if (v > 0) music.start() })
 watch(() => profile.settings.sound, (v) => setSoundEnabled(v))
 watch(() => profile.equippedKnife, (k) => engine?.setKnife(k))
 watch(() => [profile.settings.pixelRatioCap, profile.settings.reducedMotion] as const, ([p, r]) =>

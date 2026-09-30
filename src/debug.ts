@@ -1,3 +1,4 @@
+import { music } from './audio/music'
 import type { Engine } from './engine/Engine'
 import type { CutModeId } from './game/cutting/cutModes'
 import type { Axis } from './game/potato/potatoShape'
@@ -22,6 +23,7 @@ export function installDebug(engine: Engine): () => void {
       pieceCount: engine.pieceCount,
       money: profile.money,
       frames: engine.frames,
+      musicRunning: music.running,
       photo: { active: engine.photoActive, samples: engine.photoSamples },
       result: game.round?.result ?? null,
       ...engine.renderInfo,

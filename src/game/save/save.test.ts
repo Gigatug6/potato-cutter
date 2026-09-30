@@ -83,3 +83,12 @@ describe('parseSave — décors et qualité', () => {
     expect(parseSave({ version: 1, settings: { quality: 'wat' } }).settings.quality).toBe('high')
   })
 })
+
+describe('parseSave — musique', () => {
+  it('volume de musique : défaut 0,3, borné à [0,1]', () => {
+    expect(parseSave({ version: 1 }).settings.music).toBe(0.3)
+    expect(parseSave({ version: 1, settings: { music: 5 } }).settings.music).toBe(1)
+    expect(parseSave({ version: 1, settings: { music: -1 } }).settings.music).toBe(0)
+    expect(parseSave({ version: 1, settings: { music: 'x' } }).settings.music).toBe(0.3)
+  })
+})

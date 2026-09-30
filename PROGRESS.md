@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Projet terminé (phase 6 incluse)** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 9.1 musique (phase 9)** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -48,6 +48,17 @@
 - [x] 6.3 Moteur : variétés de patates + patate pourrie/verte (8), améliorations (éplucheur auto, grosses patates), couteau visible qui suit le pointeur (4), friteuse (8), jus : particules, nombres flottants, sons (7)
 - [x] 6.4 UI : choix de patate + commandes + quêtes + chrono au menu, boutique à onglets (couteaux/patates/améliorations) avec aperçu 3D rotatif (4), classement, bouton Jeter
 - [x] 6.5 e2e des nouveautés + vérification finale
+
+## Phase 9 — idées restantes (demande utilisateur : « prépare les tâches et fais-les »)
+- [ ] 9.1 Musique générative lofi + ambiance sonore (volume dans Réglages, suit l'ambiance du décor)
+- [ ] 9.2 Succès / trophées (toasts, vitrine dans Collection)
+- [ ] 9.3 Partage : capture PNG + Web Share
+- [ ] 9.4 Manette (Gamepad API : curseur virtuel, A = éplucher/trancher, etc.)
+- [ ] 9.5 Clients de restaurant 3D animés liés aux commandes
+- [ ] 9.6 Traduction EN (i18n FR/EN, sélecteur de langue)
+- [ ] 9.7 Sauvegarde en ligne (mini-serveur Node + export/import + code de synchro)
+- [ ] 9.8 Production : Caddy (Brotli/zstd/gzip, HTTPS auto) + doc CDN
+- [ ] 9.9 Textures KTX2/Basis : évaluer la faisabilité (encodeur requis)
 
 ## Décisions
 - D1 : three.js direct plutôt que TresJS (maillages impératifs).

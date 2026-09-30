@@ -16,6 +16,9 @@ function reset() {
   <ScreenShell title="Réglages">
     <section class="panel set">
       <label><input v-model="profile.settings.sound" type="checkbox" data-testid="opt-sound" /> Son</label>
+      <label>Musique et ambiance
+        <input v-model.number="profile.settings.music" type="range" min="0" max="1" step="0.05" data-testid="opt-music" aria-label="Volume de la musique" />
+      </label>
       <label><input v-model="profile.settings.reducedMotion" type="checkbox" data-testid="opt-motion" /> Réduire les animations</label>
       <label>Qualité graphique
         <select v-model="profile.settings.quality" data-testid="opt-quality">
