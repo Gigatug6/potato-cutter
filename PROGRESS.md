@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 4 — UI
-- **Prochaine étape : 4.1 Menu/HUD/Résultats (UI Vue)** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 4.2 Boutique/Caisse** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -32,7 +32,7 @@
 - [x] 3.5 Découpe 1 passe
 - [x] 3.6 Multi-passes + fin de manche
 ### Phase 4 — UI
-- [ ] 4.1 Menu/HUD/Résultats
+- [x] 4.1 Menu/HUD/Résultats
 - [ ] 4.2 Boutique/Caisse
 - [ ] 4.3 Collection/Réglages
 - [ ] 4.4 Mobile/tactile
@@ -74,3 +74,6 @@
 - 64 tests unitaires + 4 e2e verts (smoke, peel, cut, dice).
 - Captures relues : patate brune avec yeux ; zone épluchée jaune avec copeaux ; rondelles séparées à chair claire ; dés en grille 3D (~150 pièces).
 - Reste à soigner : couteau peu visible (repos hors champ), guide de coupe un peu grossier.
+
+### 2026-09-30 — 4.1
+- Menu, HUD, PhaseActions, ResultsPanel ; 66 tests + 5 e2e verts ; captures menu/résultats relues (OK).

@@ -1,0 +1,23 @@
+:root {
+  --ink: #2b1d0e; --paper: #fff8ea; --accent: #e08a1e; --accent-2: #b55d0a; --ok: #2e9e4f; --bad: #c0392b;
+  --panel: rgba(255, 248, 234, 0.94); --shadow: 0 6px 20px rgba(60, 35, 10, 0.25);
+}
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; height: 100%; }
+body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); overflow: hidden; background: #f4e3c8; }
+button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; padding: 10px 16px; background: var(--accent); color: #fff; font-weight: 700; box-shadow: 0 3px 0 var(--accent-2); }
+button:hover:not(:disabled) { filter: brightness(1.07); }
+button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-2); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.ghost { background: transparent; color: var(--ink); box-shadow: none; border: 2px solid var(--ink); }
+button.big { font-size: 1.25rem; padding: 14px 28px; }
+h1, h2, h3 { margin: 0 0 8px; }
+.panel { background: var(--panel); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+.overlay { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+.overlay > * { pointer-events: auto; }
+.screen { position: absolute; inset: 0; overflow-y: auto; padding: 72px 16px 16px; background: rgba(244, 227, 200, 0.92); }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+  button.big { font-size: 1.05rem; padding: 12px 18px; }
+}
