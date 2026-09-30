@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { createRng } from '../game/core/rng'
 import { CRATE_PRICE, KNIVES, STARTER_KNIFE_ID, knifeById, type KnifeDef } from '../game/data/knives'
 import { openCrate as rollCrate, type CrateResult } from '../game/economy/crate'
 import type { CutModeId } from '../game/cutting/cutModes'
+import { newlyUnlocked, type AchievementContext, type AchievementDef } from '../game/data/achievements'
 import { DEFAULT_DECOR, decorById, toggleEquip } from '../game/data/decor'
 import { POTATOES, STARTER_POTATO_ID, potatoById } from '../game/data/potatoes'
 import { upgradeById, upgradePrice, upgradeValueMult } from '../game/data/upgrades'
@@ -11,7 +12,7 @@ import { ensureOrders, matchOrder, orderBonus, type Order } from '../game/orders
 import { applyRound, ensureQuests, isComplete, todayKey, type QuestState } from '../game/quests/quests'
 import { addScore, type ScoreEntry } from '../game/scoring/leaderboard'
 import type { Grade } from '../game/scoring/scoring'
-import { defaultSave, type SaveV1 } from '../game/save/saveSchema'
+import { defaultSave, type Counters, type SaveV1 } from '../game/save/saveSchema'
 import { clearSave, loadSave } from '../game/save/storage'
 
 export type BuyResult = 'ok' | 'owned' | 'poor' | 'crateOnly' | 'unknown'
@@ -32,6 +33,10 @@ export const useProfileStore = defineStore('profile', () => {
   const leaderboard = ref<ScoreEntry[]>(s.leaderboard)
   const decorOwned = ref<string[]>(s.decorOwned)
   const decorEquipped = ref<string[]>(s.decorEquipped)
+  const achievements = ref<string[]>(s.achievements)
+  const counters = ref<Counters>(s.counters)
+  /** succès à afficher (transitoire, non sauvegardé) */
+  const toasts = ref<AchievementDef[]>([])
 
   const equippedKnife = computed<KnifeDef>(() => knifeById(equippedKnifeId.value) ?? KNIVES[0])
   const owns = (id: string): boolean => !!ownedKnives.value[id]
@@ -72,6 +77,7 @@ export const useProfileStore = defineStore('profile', () => {
     if (money.value < CRATE_PRICE) return null
     money.value -= CRATE_PRICE
     const res = rollCrate(rng, new Set(Object.keys(ownedKnives.value)))
+    bump('crates')
     if (res.duplicate) earn(res.refund)
     else addOwned(res.knifeId)
     return res
@@ -119,6 +125,36 @@ export const useProfileStore = defineStore('profile', () => {
     return true
   }
 
+  // ---------- succès ----------
+  const achievementContext = computed<AchievementContext>(() => ({
+    potatoes: stats.value.potatoes, sGrades: counters.value.sGrades, streak: stats.value.streak, totalEarned: totalEarned.value,
+    knivesOwned: Object.keys(ownedKnives.value).length, knivesTotal: KNIVES.length,
+    rareKnives: Object.keys(ownedKnives.value).filter((id) => { const r = knifeById(id)?.rarity; return r === 'rare' || r === 'epique' || r === 'legendaire' }).length,
+    legendaryKnives: Object.keys(ownedKnives.value).filter((id) => knifeById(id)?.rarity === 'legendaire').length,
+    potatoKinds: unlockedPotatoes.value.length, potatoKindsTotal: POTATOES.length,
+    upgradeMaxed: Object.entries(upgrades.value).filter(([id, l]) => l >= (upgradeById(id)?.max ?? 99)).length,
+    decorOwned: decorOwned.value.length, ordersDelivered: counters.value.ordersDelivered, challenges: counters.value.challenges,
+    bestChallengeScore: counters.value.bestChallengeScore, photos: counters.value.photos, crates: counters.value.crates,
+  }))
+
+  /** Débloque les succès atteints : récompense créditée et toast mis en file. */
+  function checkAchievements(): AchievementDef[] {
+    const fresh = newlyUnlocked(achievementContext.value, achievements.value)
+    if (!fresh.length) return fresh
+    achievements.value = [...achievements.value, ...fresh.map((a) => a.id)]
+    for (const a of fresh) earn(a.reward)
+    toasts.value = [...toasts.value, ...fresh]
+    return fresh
+  }
+
+  function dismissToast(): void {
+    toasts.value = toasts.value.slice(1)
+  }
+
+  const bump = (k: keyof Counters, by = 1): void => {
+    counters.value = { ...counters.value, [k]: k === 'bestChallengeScore' ? Math.max(counters.value[k], by) : counters.value[k] + by }
+  }
+
   // ---------- améliorations ----------
   const upgradeLevel = (id: string): number => upgrades.value[id] ?? 0
   const valueMult = computed(() => selectedPotato.value.valueMult * upgradeValueMult(upgrades.value))
@@ -160,6 +196,7 @@ export const useProfileStore = defineStore('profile', () => {
     if (!order) return null
     const bonus = orderBonus(r.reward, order)
     earn(bonus)
+    bump('ordersDelivered')
     orders.value = ensureOrders(orders.value.filter((o) => o.id !== order.id), createRng(Date.now() >>> 0))
     return { order, bonus }
   }
@@ -178,6 +215,7 @@ export const useProfileStore = defineStore('profile', () => {
       unlockedPotatoes: unlockedPotatoes.value, selectedPotatoId: selectedPotatoId.value, upgrades: upgrades.value,
       orders: orders.value, quests: quests.value, leaderboard: leaderboard.value,
       decorOwned: decorOwned.value, decorEquipped: decorEquipped.value,
+      achievements: achievements.value, counters: counters.value,
     }
   }
 
@@ -197,11 +235,16 @@ export const useProfileStore = defineStore('profile', () => {
     leaderboard.value = []
     decorOwned.value = [...DEFAULT_DECOR]
     decorEquipped.value = [...DEFAULT_DECOR]
+    achievements.value = []
+    counters.value = d.counters
+    toasts.value = []
     clearSave()
   }
 
   refreshOrders()
   refreshQuests()
+  watch(achievementContext, () => { checkAchievements() }, { deep: true })
+  checkAchievements()
 
-  return { decorOwned, decorEquipped, ownsDecor, isDecorEquipped, buyDecor, equipDecor, unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
+  return { achievements, counters, toasts, achievementContext, checkAchievements, dismissToast, bump, decorOwned, decorEquipped, ownsDecor, isDecorEquipped, buyDecor, equipDecor, unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
 })

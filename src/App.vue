@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GameCanvas from './components/GameCanvas.vue'
+import AchievementToasts from './components/hud/AchievementToasts.vue'
 import HudBar from './components/hud/HudBar.vue'
 import PhaseActions from './components/hud/PhaseActions.vue'
 import MainMenu from './components/screens/MainMenu.vue'
@@ -28,6 +29,7 @@ watch(() => game.screen, (sc) => { document.title = TITLES[sc] ?? TITLES.menu },
 <template>
   <main class="app">
     <GameCanvas />
+    <AchievementToasts />
     <div class="overlay">
       <MainMenu v-if="game.screen === 'menu'" />
       <template v-else-if="game.screen === 'game'">

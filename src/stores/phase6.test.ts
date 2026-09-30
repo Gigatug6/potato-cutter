@@ -135,3 +135,36 @@ describe('profile — décors', () => {
     expect(s.decorEquipped).not.toContain('wall-plaster')
   })
 })
+
+describe('succès', () => {
+  it('se débloquent (récompense créditée, toast), une seule fois', async () => {
+    const g = useGameStore(), p = useProfileStore()
+    expect(p.achievements).toEqual([])
+    g.startRound('rondelles', 42, null)
+    g.setPeelCoverage(1); g.goToCutting()
+    g.finishRound(B, cuts())
+    await Promise.resolve()
+    expect(p.achievements).toContain('first-potato')
+    expect(p.toasts.some((t) => t.id === 'first-potato')).toBe(true)
+    const money = p.money
+    p.checkAchievements()
+    expect(p.money).toBe(money) // pas de double récompense
+    p.dismissToast()
+  })
+  it('compteurs : caisses et commandes', async () => {
+    const p = useProfileStore()
+    p.earn(20000)
+    for (let i = 0; i < 10; i++) p.openCrate()
+    await Promise.resolve()
+    expect(p.counters.crates).toBe(10)
+    expect(p.achievements).toContain('crate-10')
+  })
+  it('sauvegarde : succès et compteurs persistent', () => {
+    const p = useProfileStore()
+    p.bump('photos')
+    p.checkAchievements()
+    const s = p.toSave()
+    expect(s.counters.photos).toBe(1)
+    expect(s.achievements).toContain('photo-1')
+  })
+})

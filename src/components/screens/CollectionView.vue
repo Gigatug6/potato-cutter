@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ACHIEVEMENTS } from '../../game/data/achievements'
 import { CUT_MODES } from '../../game/cutting/cutModes'
 import { KNIVES } from '../../game/data/knives'
 import { RARITY_META } from '../../game/data/rarities'
@@ -20,6 +21,19 @@ const secs = (ms: number | null) => (ms === null ? '—' : `${(ms / 1000).toFixe
       <ul>
         <li v-for="m in modes" :key="m.id">{{ m.label }} : meilleure note <b>{{ profile.stats.bestGrade[m.id] ?? '—' }}</b>, meilleur temps <b>{{ secs(profile.stats.bestTimeMs[m.id]) }}</b></li>
       </ul>
+    </section>
+    <section class="panel stats" data-testid="achievements">
+      <h2>🏆 Succès ({{ profile.achievements.length }}/{{ ACHIEVEMENTS.length }})</h2>
+      <div class="ach">
+        <article v-for="a in ACHIEVEMENTS" :key="a.id" class="a" :class="{ done: profile.achievements.includes(a.id) }" :data-testid="`ach-${a.id}`">
+          <span class="ic">{{ profile.achievements.includes(a.id) ? a.icon : '🔒' }}</span>
+          <div>
+            <b>{{ a.name }}</b>
+            <small>{{ a.description }}</small>
+            <small v-if="a.progress && !profile.achievements.includes(a.id)">{{ a.progress(profile.achievementContext)[0] }}/{{ a.progress(profile.achievementContext)[1] }}</small>
+          </div>
+        </article>
+      </div>
     </section>
     <section class="panel stats" data-testid="leaderboard">
       <h2>🏆 Classement chrono (local)</h2>
@@ -47,5 +61,11 @@ const secs = (ms: number | null) => (ms === null ? '—' : `${(ms / 1000).toFixe
 
 <style scoped>
 .t { margin-top: 16px; }
+.stats { margin-bottom: 12px; }
+.ach { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.a { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 10px; padding: 6px 10px; opacity: 0.6; }
+.a.done { opacity: 1; box-shadow: inset 0 0 0 2px #d4a100; }
+.a .ic { font-size: 1.6rem; }
+.a small { display: block; opacity: 0.75; font-size: 0.78rem; }
 .k.missing { opacity: 0.55; filter: grayscale(1); }
 </style>

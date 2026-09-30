@@ -90,6 +90,7 @@ export const useGameStore = defineStore('game', () => {
     profile.earn(res.reward)
     const st = profile.stats
     st.potatoes++
+    if (res.grade === 'S' && !r.bad) profile.bump('sGrades')
     st.streak = !r.bad && (res.grade === 'S' || res.grade === 'A') ? st.streak + 1 : 0
     const order = ['S', 'A', 'B', 'C', 'D']
     const best = st.bestGrade[r.mode]
@@ -137,7 +138,10 @@ export const useGameStore = defineStore('game', () => {
     const c = challenge.value
     if (!c || c.done) return
     c.done = true
-    c.rank = useProfileStore().submitScore({ score: c.score, potatoes: c.potatoes, mode: c.mode, date: new Date().toISOString().slice(0, 10) })
+    const profile = useProfileStore()
+    profile.bump('challenges')
+    profile.bump('bestChallengeScore', c.score)
+    c.rank = profile.submitScore({ score: c.score, potatoes: c.potatoes, mode: c.mode, date: new Date().toISOString().slice(0, 10) })
     phase.value = 'idle'
   }
 

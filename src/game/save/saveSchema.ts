@@ -2,6 +2,7 @@ import { KNIVES, STARTER_KNIFE_ID } from '../data/knives'
 import type { CutModeId } from '../cutting/cutModes'
 import { ORDER_COUNT, type Order } from '../orders/orders'
 import { POTATOES, STARTER_POTATO_ID } from '../data/potatoes'
+import { achievementById } from '../data/achievements'
 import { DEFAULT_DECOR, decorById, sanitizeEquipped } from '../data/decor'
 import { UPGRADES } from '../data/upgrades'
 import type { QuestState } from '../quests/quests'
@@ -9,6 +10,9 @@ import type { ScoreEntry } from '../scoring/leaderboard'
 
 export type Quality = 'low' | 'high' | 'ultra'
 export const QUALITIES: Quality[] = ['low', 'high', 'ultra']
+
+export interface Counters { sGrades: number; ordersDelivered: number; challenges: number; bestChallengeScore: number; photos: number; crates: number }
+export const defaultCounters = (): Counters => ({ sGrades: 0, ordersDelivered: 0, challenges: 0, bestChallengeScore: 0, photos: 0, crates: 0 })
 
 export interface SaveV1 {
   version: 1
@@ -32,6 +36,8 @@ export interface SaveV1 {
   leaderboard: ScoreEntry[]
   decorOwned: string[]
   decorEquipped: string[]
+  achievements: string[]
+  counters: Counters
 }
 
 const MODES: CutModeId[] = ['rondelles', 'frites', 'des']
@@ -56,6 +62,8 @@ export function defaultSave(): SaveV1 {
     leaderboard: [],
     decorOwned: [...DEFAULT_DECOR],
     decorEquipped: [...DEFAULT_DECOR],
+    achievements: [],
+    counters: defaultCounters(),
   }
 }
 
@@ -120,6 +128,8 @@ export function parseSave(raw: unknown): SaveV1 {
     : []
   s.decorOwned = [...new Set([...DEFAULT_DECOR, ...ownedDecor])]
   s.decorEquipped = sanitizeEquipped(raw.decorEquipped, s.decorOwned)
+  s.achievements = Array.isArray(raw.achievements) ? [...new Set(raw.achievements.filter((x): x is string => typeof x === 'string' && !!achievementById(x)))] : []
+  if (isObj(raw.counters)) for (const k of Object.keys(s.counters) as (keyof Counters)[]) s.counters[k] = num(raw.counters[k], 0)
   return s
 }
 

@@ -92,3 +92,13 @@ describe('parseSave — musique', () => {
     expect(parseSave({ version: 1, settings: { music: 'x' } }).settings.music).toBe(0.3)
   })
 })
+
+describe('parseSave — succès', () => {
+  it('filtre les succès inconnus, répare les compteurs', () => {
+    const s = parseSave({ version: 1, achievements: ['first-potato', 'zzz', 4, 'first-potato'], counters: { sGrades: -3, photos: 2.9, crates: 'x' } })
+    expect(s.achievements).toEqual(['first-potato'])
+    expect(s.counters.sGrades).toBe(0)
+    expect(s.counters.photos).toBe(2)
+    expect(s.counters.crates).toBe(0)
+  })
+})
