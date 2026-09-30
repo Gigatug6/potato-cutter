@@ -4,3 +4,5 @@ Simulateur 3D de découpe de patates (Vue 3 + TypeScript + three.js). Prérequis
 - `./scripts/init-env.sh` puis `./scripts/dev.sh` → http://localhost:5173
 - `./scripts/check.sh` : typecheck + tests + build
 - `./scripts/e2e.sh` : tests Playwright
+
+`make help`-like : `make dev` · `make check` · `make e2e` · `make sh` · `make clean`. Suivi du projet : `PROGRESS.md`.

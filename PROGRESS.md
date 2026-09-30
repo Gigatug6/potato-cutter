@@ -1,8 +1,8 @@
 # PROGRESS — Potato Cutter
 
 ## Statut
-- Phase courante : 5 — Finitions
-- **Prochaine étape : 5.1 Audio WebAudio** (commandes : `make check`, `make e2e`, `make dev`)
+- Phase courante : terminé
+- **Projet terminé** — voir « Reste possible » ci-dessous (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -37,10 +37,10 @@
 - [x] 4.3 Collection/Réglages
 - [x] 4.4 Mobile/tactile
 ### Phase 5 — Finitions
-- [ ] 5.1 Audio
-- [ ] 5.2 Juice
-- [ ] 5.3 Perf/robustesse
-- [ ] 5.4 Vérif finale
+- [x] 5.1 Audio
+- [x] 5.2 Juice
+- [x] 5.3 Perf/robustesse
+- [x] 5.4 Vérif finale
 
 ## Décisions
 - D1 : three.js direct plutôt que TresJS (maillages impératifs).
@@ -86,3 +86,11 @@
 ### 2026-09-30 — 4.4
 - Caméra qui recule sur écran étroit, e2e mobile 390x844 (tap/pointer tactile) vert ; 9 e2e verts.
 - Fog éloigné (la patate paraissait délavée en mobile). Smoke rendu robuste (waitForFunction frames).
+
+### 2026-09-30 — Phase 5 + vérification finale
+- 5.1 audio WebAudio synthétisé (grattage, chop, pièce), réglage son ; 5.2 badge de série, tremblement caméra (désactivé si animations réduites) ; 5.3 perte de contexte WebGL (message + recharger), test 5 manches sans fuite GPU.
+- Vérif finale : image reconstruite sans cache, `npm ci` propre, `make check` vert (68 tests, bundle 193 kB gzip), 11 e2e verts (smoke, peel, cut, dice, round, shop x3, mobile, perf x2).
+- Seul élément appartenant à root : le point de montage `./node_modules` (créé par Docker), inoffensif.
+
+## Reste possible (idées, hors plan)
+- Aperçu 3D rotatif du couteau en boutique ; texte flottant « +N » 3D ; équilibrage de l'économie (rondelles ≈ 10–25 🥔 par patate, le 1er achat à 80) ; swipe vertical en plus du clic pour couper ; lisser les bords de la zone épluchée (peelMap 128×64).
