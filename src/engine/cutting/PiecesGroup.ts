@@ -1,4 +1,4 @@
-import { Group, Mesh, Vector3, type BufferGeometry, type MeshStandardMaterial, type Object3D } from 'three'
+import { Group, Mesh, Vector3, type BufferGeometry, type MeshPhysicalMaterial, type Object3D } from 'three'
 import { createPotatoMaterial, type PotatoLook } from '../potato/potatoMaterial'
 import type { SceneTextures } from '../scene/textures'
 import { buildPieceGeometry, DEFAULT_COLORS, type PieceColors } from '../../game/cutting/pieceGeometry'
@@ -14,7 +14,7 @@ interface Item { mesh: Mesh; geo: BufferGeometry; center: Vector3; target: Vecto
 export class PiecesGroup {
   readonly group = new Group()
   private items = new Map<string, Item>()
-  private material: MeshStandardMaterial | null = null
+  private material: MeshPhysicalMaterial | null = null
 
   get count(): number {
     return this.items.size

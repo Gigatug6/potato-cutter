@@ -3,6 +3,7 @@ import { markRaw, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { playChop, playCoin, playError, playScratch, playSizzle, setSoundEnabled } from '../audio/sfx'
 import { autoPeelSpeed, potatoScale } from '../game/data/upgrades'
 import { installDebug } from '../debug'
+import { effectiveQuality } from '../quality'
 import { Engine } from '../engine/Engine'
 import { engineRef } from '../engine/bridge'
 import { useGameStore } from '../stores/game'
@@ -30,6 +31,8 @@ onMounted(() => {
     knife: profile.equippedKnife,
     pixelRatioCap: profile.settings.pixelRatioCap,
     reducedMotion: profile.settings.reducedMotion,
+    quality: effectiveQuality(profile.settings.quality),
+    decor: profile.decorEquipped,
   }))
   engineRef.current = engine
   const ev = engine.events
@@ -60,6 +63,8 @@ watch(() => game.round, (r) => {
 watch(() => game.challenge, (c) => engine?.setSkipFry(!!c))
 watch(() => game.rotateMode, (v) => engine?.setRotateMode(v))
 watch(() => game.phase, (p) => { if (p === 'cutting') engine?.beginCutting() })
+watch(() => profile.settings.quality, (q) => engine?.setQuality(effectiveQuality(q)))
+watch(() => [...profile.decorEquipped], (ids) => engine?.setDecor(ids))
 watch(() => profile.settings.sound, (v) => setSoundEnabled(v))
 watch(() => profile.equippedKnife, (k) => engine?.setKnife(k))
 watch(() => [profile.settings.pixelRatioCap, profile.settings.reducedMotion] as const, ([p, r]) =>

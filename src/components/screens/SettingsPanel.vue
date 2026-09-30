@@ -17,7 +17,12 @@ function reset() {
     <section class="panel set">
       <label><input v-model="profile.settings.sound" type="checkbox" data-testid="opt-sound" /> Son</label>
       <label><input v-model="profile.settings.reducedMotion" type="checkbox" data-testid="opt-motion" /> Réduire les animations</label>
-      <label>Qualité (résolution max)
+      <label>Qualité graphique
+        <select v-model="profile.settings.quality" data-testid="opt-quality">
+          <option value="low">Basse (rapide)</option><option value="high">Élevée (AO, bloom, cinéma)</option><option value="ultra">Ultra (+ profondeur de champ)</option>
+        </select>
+      </label>
+      <label>Résolution max
         <select v-model.number="profile.settings.pixelRatioCap">
           <option :value="1">Basse</option><option :value="2">Normale</option><option :value="3">Haute</option>
         </select>

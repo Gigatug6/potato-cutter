@@ -12,11 +12,11 @@ export const api = <T>(page: Page, fn: string, ...args: unknown[]) =>
   page.evaluate(([f, a]) => (window as any).__potato[f as string](...(a as unknown[])) as T, [fn, args] as const)
 export const shot = (page: Page, name: string) => page.screenshot({ path: `artifacts/screens/${name}.png` })
 
-export async function open(page: Page) {
+export async function open(page: Page, query = '') {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
-  await page.goto('/')
+  await page.goto('/' + query)
   await page.waitForFunction(() => (window as any).__potato)
   return errors
 }

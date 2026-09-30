@@ -3,6 +3,7 @@ import {
   Scene, Vector2, Vector3, WebGLRenderer, Euler, type Texture,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { ACESFilmicToneMapping, NoToneMapping } from 'three'
 import { Emitter } from '../game/core/events'
 import { CUT_MODES, type CutModeId } from '../game/cutting/cutModes'
 import { CutPlan, cellsFromCuts, idealPositions, type AddCutResult, type Bounds, type Cuts } from '../game/cutting/cutPlan'
@@ -19,7 +20,9 @@ import { PeelerTool } from './potato/PeelerTool'
 import { autoPeelSpeed } from '../game/data/upgrades'
 import { radiusAt } from '../game/potato/potatoShape'
 import { PotatoMesh, type PotatoLook } from './potato/PotatoMesh'
-import { BOARD_TOP, buildKitchen } from './scene/Kitchen'
+import { BOARD_TOP, Kitchen } from './scene/Kitchen'
+import { PostFx } from './fx/PostFx'
+import type { Quality } from '../game/save/saveSchema'
 import { createEnvironment } from './scene/env'
 import { loadTextures, type SceneTextures } from './scene/textures'
 
@@ -43,7 +46,7 @@ export interface RoundOptions {
   autoPeelLevel?: number
 }
 
-export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef }
+export interface EngineOptions { pixelRatioCap?: number; reducedMotion?: boolean; knife: KnifeDef; quality?: Quality; decor?: string[] }
 
 /** rayon (rad) de l'éplucheur sur la patate : grande lame, épluche large */
 const PEEL_RADIUS = 0.32
@@ -100,6 +103,10 @@ export class Engine {
   private shake = 0
   frames = 0
   private fryTarget = new Vector3()
+  private kitchen!: Kitchen
+  private fx: PostFx | null = null
+  private quality: Quality = 'low'
+  private time = 0
   private readonly juice = new PeelParticles('#f3e3a0', 0.06, 5)
   private readonly coins = new PeelParticles('#ffc933', 0.1, 4)
   private readonly oilFx = new PeelParticles('#ffd27a', 0.05, 2)
@@ -121,16 +128,17 @@ export class Engine {
     this.renderer = new WebGLRenderer({ antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.pixelRatioCap ?? 2))
     this.renderer.shadowMap.enabled = true
+    this.renderer.toneMapping = ACESFilmicToneMapping
     this.canvas = this.renderer.domElement
     this.canvas.style.touchAction = 'none'
     this.canvas.style.display = 'block'
     container.appendChild(this.canvas)
 
     this.tex = loadTextures(this.renderer)
-    this.fryTarget = buildKitchen(this.scene, this.tex)
     this.env = createEnvironment(this.renderer)
-    this.scene.environment = this.env
-    this.scene.environmentIntensity = 0.6
+    this.kitchen = new Kitchen(this.scene, this.tex, this.renderer, this.env)
+    this.fryTarget = this.kitchen.fryTarget
+    if (opts.decor) this.kitchen.apply(opts.decor)
     this.potatoGroup.position.set(0, DEFAULT_POTATO_Y, 0)
     this.potatoGroup.add(this.pieces.group)
     this.scene.add(this.potatoGroup, this.particles.points, this.juice.points, this.coins.points, this.oilFx.points)
@@ -163,6 +171,7 @@ export class Engine {
     this.resizeObs = new ResizeObserver(() => this.resize())
     this.resizeObs.observe(container)
     this.resize()
+    this.setQuality(opts.quality ?? 'low')
     this.renderer.setAnimationLoop(this.tick)
   }
 
@@ -266,6 +275,31 @@ export class Engine {
   setKnife(def: KnifeDef): void {
     this.knife = def
     this.rig.setKnife(def)
+  }
+
+  /** Qualité graphique : low = rendu direct ; high/ultra = post-traitement (AO, bloom, tone mapping, SMAA, bokeh). */
+  setQuality(q: Quality): void {
+    this.quality = q
+    this.fx?.dispose()
+    this.fx = null
+    if (q === 'low') {
+      this.renderer.toneMapping = ACESFilmicToneMapping
+      this.renderer.toneMappingExposure = 1
+    } else {
+      this.renderer.toneMapping = NoToneMapping // fait par la chaîne de post-traitement
+      const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1
+      this.fx = new PostFx(this.renderer, this.scene, this.camera, q, w, h)
+      this.fx.setBloom(this.kitchen.mood.bloom)
+    }
+    this.resize()
+  }
+
+  get currentQuality(): Quality { return this.quality }
+
+  /** Décors équipés (planche, mur, ambiance, objets). */
+  setDecor(ids: string[]): void {
+    this.kitchen.apply(ids)
+    this.fx?.setBloom(this.kitchen.mood.bloom)
   }
 
   setSettings(s: { pixelRatioCap?: number; reducedMotion?: boolean }): void {
@@ -506,6 +540,7 @@ export class Engine {
     const w = this.container.clientWidth || 1
     const h = this.container.clientHeight || 1
     this.renderer.setSize(w, h, false)
+    this.fx?.setSize(w, h)
     this.canvas.style.width = '100%'
     this.canvas.style.height = '100%'
     this.camera.aspect = w / h
@@ -539,7 +574,12 @@ export class Engine {
     }
     if (this.controls.enabled) this.controls.update()
     else this.camera.lookAt(LOOK)
-    this.renderer.render(this.scene, this.camera)
+    this.time += dt
+    this.kitchen.update(dt)
+    if (this.fx) {
+      this.fx.setFocus(this.camera.position.distanceTo(this.potatoGroup.position))
+      this.fx.render(raw)
+    } else this.renderer.render(this.scene, this.camera)
   }
 
   dispose(): void {
@@ -562,6 +602,8 @@ export class Engine {
     this.rig.dispose()
     this.guide.geometry.dispose()
     ;(this.guide.material as MeshBasicMaterial).dispose()
+    this.fx?.dispose()
+    this.kitchen.dispose()
     this.env.dispose()
     this.renderer.dispose()
     this.canvas.remove()
