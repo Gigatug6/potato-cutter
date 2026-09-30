@@ -24,6 +24,7 @@ export const useGameStore = defineStore('game', () => {
   const screen = ref<Screen>('menu')
   const phase = ref<Phase>('idle')
   const round = ref<RoundState | null>(null)
+  const rotateMode = ref(false)
 
   function startRound(mode: CutModeId, seed = Math.floor(Math.random() * 1e9)): void {
     round.value = { seed, mode, startedAt: Date.now(), peelCoverage: 0, cutCount: 0, pieceCount: 0 }
@@ -82,5 +83,5 @@ export const useGameStore = defineStore('game', () => {
     screen.value = 'menu'
   }
 
-  return { screen, phase, round, startRound, setPeelCoverage, goToCutting, registerCut, targetCuts, finishRound, backToMenu }
+  return { screen, phase, round, rotateMode, startRound, setPeelCoverage, goToCutting, registerCut, targetCuts, finishRound, backToMenu }
 })

@@ -16,6 +16,7 @@ import { PeelParticles } from './potato/PeelParticles'
 import { PotatoMesh } from './potato/PotatoMesh'
 import { BOARD_TOP, buildKitchen } from './scene/Kitchen'
 import { createEnvironment } from './scene/env'
+import { loadTextures, type SceneTextures } from './scene/textures'
 
 export interface EngineEvents extends Record<string, unknown> {
   peelProgress: number
@@ -58,6 +59,10 @@ export class Engine {
   private readonly guide: Mesh
   private readonly resizeObs: ResizeObserver
   private readonly env: Texture
+  private readonly tex: SceneTextures
+  private rotateMode = false
+  private rotating = false
+  private readonly lastRot = new Vector2()
   private readonly canvas: HTMLCanvasElement
 
   private mode: Mode = 'idle'
@@ -88,7 +93,8 @@ export class Engine {
     this.canvas.style.display = 'block'
     container.appendChild(this.canvas)
 
-    buildKitchen(this.scene)
+    this.tex = loadTextures(this.renderer)
+    buildKitchen(this.scene, this.tex)
     this.env = createEnvironment(this.renderer)
     this.scene.environment = this.env
     this.scene.environmentIntensity = 0.6
@@ -113,6 +119,7 @@ export class Engine {
     this.controls.update()
 
     this.canvas.addEventListener('webglcontextlost', this.onContextLost)
+    this.canvas.addEventListener('contextmenu', this.onContext)
     this.canvas.addEventListener('pointerdown', this.onDown)
     this.canvas.addEventListener('pointermove', this.onMove)
     window.addEventListener('pointerup', this.onUp)
@@ -128,7 +135,7 @@ export class Engine {
     this.clearRound()
     this.shape = createPotatoShape(seed)
     this.peel = new PeelMap()
-    this.potato = new PotatoMesh(this.shape, this.peel)
+    this.potato = new PotatoMesh(this.shape, this.peel, this.tex)
     this.potatoGroup.add(this.potato.mesh)
     this.potatoGroup.quaternion.identity()
     this.targetQuat.identity()
@@ -182,6 +189,11 @@ export class Engine {
     this.events.emit('finished', { bounds: this.bounds, cuts: this.plan.cuts })
     this.guide.visible = false
     this.mode = 'idle'
+  }
+
+  /** Mode « tourner » : glisser fait pivoter la patate elle-même (aussi : clic droit ou Maj + glisser). */
+  setRotateMode(v: boolean): void {
+    this.rotateMode = v
   }
 
   setKnife(def: KnifeDef): void {
@@ -280,9 +292,17 @@ export class Engine {
     this.events.emit('contextLost', undefined)
   }
 
+  private readonly onContext = (e: Event): void => e.preventDefault()
+
   private readonly onDown = (e: PointerEvent): void => {
     this.downAt.set(e.clientX, e.clientY)
     if (this.mode !== 'peeling') return
+    if (this.rotateMode || e.button === 2 || e.shiftKey) {
+      this.rotating = true
+      this.controls.enabled = false
+      this.lastRot.set(e.clientX, e.clientY)
+      return
+    }
     this.setPointer(e)
     const h = this.hitPotato()
     if (h) {
@@ -294,6 +314,16 @@ export class Engine {
   }
 
   private readonly onMove = (e: PointerEvent): void => {
+    if (this.rotating) {
+      const dx = e.clientX - this.lastRot.x, dy = e.clientY - this.lastRot.y
+      this.lastRot.set(e.clientX, e.clientY)
+      const q = new Quaternion()
+        .setFromAxisAngle(new Vector3(0, 1, 0), dx * 0.012)
+        .multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), dy * 0.012))
+      this.potatoGroup.quaternion.premultiply(q)
+      this.targetQuat.copy(this.potatoGroup.quaternion)
+      return
+    }
     this.setPointer(e)
     if (this.mode === 'peeling' && this.peeling) {
       const h = this.hitPotato()
@@ -310,6 +340,11 @@ export class Engine {
   }
 
   private readonly onUp = (e: PointerEvent): void => {
+    if (this.rotating) {
+      this.rotating = false
+      this.controls.enabled = this.mode === 'peeling'
+      return
+    }
     if (this.peeling) {
       this.peeling = false
       this.lastDir = null
@@ -391,6 +426,7 @@ export class Engine {
     this.renderer.setAnimationLoop(null)
     this.resizeObs.disconnect()
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost)
+    this.canvas.removeEventListener('contextmenu', this.onContext)
     this.canvas.removeEventListener('pointerdown', this.onDown)
     this.canvas.removeEventListener('pointermove', this.onMove)
     window.removeEventListener('pointerup', this.onUp)

@@ -13,7 +13,7 @@ button.ghost { background: transparent; color: var(--ink); box-shadow: none; bor
 button.big { font-size: 1.25rem; padding: 14px 28px; }
 h1, h2, h3 { margin: 0 0 8px; }
 .panel { background: var(--panel); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
-.overlay { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+.overlay { user-select: none; -webkit-user-select: none; position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
 .overlay > * { pointer-events: auto; }
 .screen { position: absolute; inset: 0; overflow-y: auto; padding: 72px 16px 16px; background: rgba(244, 227, 200, 0.92); }
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }

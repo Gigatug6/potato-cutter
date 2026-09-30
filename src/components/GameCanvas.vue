@@ -41,6 +41,7 @@ onMounted(() => {
 watch(() => game.round, (r) => {
   if (r && engine && !r.result && game.phase === 'peeling') engine.startRound(r.mode, r.seed)
 })
+watch(() => game.rotateMode, (v) => engine?.setRotateMode(v))
 watch(() => game.phase, (p) => { if (p === 'cutting') engine?.beginCutting() })
 watch(() => profile.settings.sound, (v) => setSoundEnabled(v))
 watch(() => profile.equippedKnife, (k) => engine?.setKnife(k))

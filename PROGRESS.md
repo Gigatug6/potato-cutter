@@ -94,3 +94,6 @@
 
 ## Reste possible (idées, hors plan)
 - Aperçu 3D rotatif du couteau en boutique ; texte flottant « +N » 3D ; équilibrage de l'économie (rondelles ≈ 10–25 🥔 par patate, le 1er achat à 80) ; swipe vertical en plus du clic pour couper ; lisser les bords de la zone épluchée (peelMap 128×64).
+
+### 2026-09-30 — Retours utilisateur
+- Rotation 3D de la patate (bouton « Tourner », clic droit, Maj+glisser), couleurs plus sombres (valeurs linéaires corrigées), vraies textures CC0 Poly Haven (bois, peau via brown_mud_02 + normal map, shader mélange peau/chair), pôles UV déplacés aux extrémités. e2e rotate ajouté. Textures : public/textures/LICENSE.md.

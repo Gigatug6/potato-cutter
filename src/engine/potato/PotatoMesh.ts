@@ -1,4 +1,5 @@
-import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial } from 'three'
+import { BufferAttribute, BufferGeometry, Color, IcosahedronGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three'
+import type { SceneTextures } from '../scene/textures'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import { createRng } from '../../game/core/rng'
 import type { PeelMap } from '../../game/potato/peelMap'
@@ -14,11 +15,12 @@ export class PotatoMesh {
   private readonly dirs: Vec3[] = []
   private readonly radii: number[] = []
   private readonly skin: Float32Array
+  private readonly peelAttr: BufferAttribute
 
-  constructor(shape: PotatoShape, private readonly peel: PeelMap) {
+  constructor(shape: PotatoShape, private readonly peel: PeelMap, tex: SceneTextures) {
     const base = new IcosahedronGeometry(1, 20)
+    base.rotateZ(Math.PI / 2) // pôles d'UV aux extrémités (axe long) plutôt que sur le dessus
     base.deleteAttribute('normal')
-    base.deleteAttribute('uv')
     this.geo = mergeVertices(base, 1e-4)
     base.dispose()
     const pos = this.geo.getAttribute('position') as BufferAttribute
@@ -37,12 +39,31 @@ export class PotatoMesh {
       this.radii.push(r)
       const v = (rng() - 0.5) * 0.06
       const eye = eyeCenters.some((e) => e[0] * d[0] + e[1] * d[1] + e[2] * d[2] > 0.992)
-      tint.setRGB(0.56 + v, 0.39 + v, 0.23 + v)
-      if (eye) tint.multiplyScalar(0.45)
+      tint.setRGB(0.92 + v, 0.92 + v, 0.92 + v)
+      if (eye) tint.multiplyScalar(0.4)
       this.skin.set([tint.r, tint.g, tint.b], i * 3)
     }
     this.geo.setAttribute('color', new BufferAttribute(new Float32Array(pos.count * 3), 3))
-    this.mesh = new Mesh(this.geo, new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }))
+    this.peelAttr = new BufferAttribute(new Float32Array(pos.count), 1)
+    this.geo.setAttribute('aPeel', this.peelAttr)
+    const mat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9, map: tex.skinDiff, normalMap: tex.skinNor })
+    mat.normalScale.set(1.2, 1.2)
+    const flesh = new Vector3(FLESH[0], FLESH[1], FLESH[2])
+    // la boue (texture) est sombre : on la réchauffe et l'éclaircit pour donner une peau de patate
+    const skinTint = new Vector3(2.5, 1.85, 1.05)
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.uFlesh = { value: flesh }
+      sh.uniforms.uSkinTint = { value: skinTint }
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aPeel;\nvarying float vPeel;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPeel = aPeel;')
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vPeel;\nuniform vec3 uFlesh;\nuniform vec3 uSkinTint;')
+        .replace('#include <map_fragment>', `
+          vec3 skinC = texture2D( map, vMapUv ).rgb * uSkinTint;
+          diffuseColor.rgb *= mix( skinC, uFlesh, smoothstep( 0.35, 0.65, vPeel ) );`)
+    }
+    this.mesh = new Mesh(this.geo, mat)
     this.mesh.castShadow = true
     this.refresh()
   }
@@ -56,11 +77,13 @@ export class PotatoMesh {
       const peeled = this.peel.sample(d)
       const r = this.radii[i] * (peeled ? PEELED_INSET : 1)
       pos.setXYZ(i, d[0] * r, d[1] * r, d[2] * r)
-      if (peeled) col.setXYZ(i, FLESH[0], FLESH[1], FLESH[2])
+      this.peelAttr.setX(i, peeled ? 1 : 0)
+      if (peeled) col.setXYZ(i, 1, 1, 1)
       else col.setXYZ(i, this.skin[i * 3], this.skin[i * 3 + 1], this.skin[i * 3 + 2])
     }
     pos.needsUpdate = true
     col.needsUpdate = true
+    this.peelAttr.needsUpdate = true
     this.geo.computeVertexNormals()
     this.geo.computeBoundingSphere()
   }
