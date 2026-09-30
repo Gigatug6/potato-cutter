@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { createRng } from '../game/core/rng'
-import { CRATE_PRICE, KNIVES, STARTER_KNIFE_ID, knifeById, type KnifeDef } from '../game/data/knives'
+import { CRATE_PRICE, KNIVES, knifeById, type KnifeDef } from '../game/data/knives'
 import { openCrate as rollCrate, type CrateResult } from '../game/economy/crate'
 import type { CutModeId } from '../game/cutting/cutModes'
 import { newlyUnlocked, type AchievementContext, type AchievementDef } from '../game/data/achievements'
-import { DEFAULT_DECOR, decorById, toggleEquip } from '../game/data/decor'
-import { POTATOES, STARTER_POTATO_ID, potatoById } from '../game/data/potatoes'
+import { decorById, toggleEquip } from '../game/data/decor'
+import { POTATOES, potatoById } from '../game/data/potatoes'
 import { upgradeById, upgradePrice, upgradeValueMult } from '../game/data/upgrades'
 import { ensureOrders, matchOrder, orderBonus, type Order } from '../game/orders/orders'
 import { applyRound, ensureQuests, isComplete, todayKey, type QuestState } from '../game/quests/quests'
@@ -219,25 +219,31 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  function resetSave(): void {
-    const d = defaultSave()
+  /** Remplace tout l'état par une sauvegarde (import fichier / synchro en ligne). */
+  function applySave(d: SaveV1): void {
     money.value = d.money
     totalEarned.value = d.totalEarned
     ownedKnives.value = d.ownedKnives
-    equippedKnifeId.value = STARTER_KNIFE_ID
+    equippedKnifeId.value = d.equippedKnifeId
     stats.value = d.stats
     settings.value = d.settings
     unlockedPotatoes.value = d.unlockedPotatoes
-    selectedPotatoId.value = STARTER_POTATO_ID
+    selectedPotatoId.value = d.selectedPotatoId
     upgrades.value = d.upgrades
-    orders.value = []
-    quests.value = null
-    leaderboard.value = []
-    decorOwned.value = [...DEFAULT_DECOR]
-    decorEquipped.value = [...DEFAULT_DECOR]
-    achievements.value = []
+    orders.value = d.orders
+    quests.value = d.quests
+    leaderboard.value = d.leaderboard
+    decorOwned.value = d.decorOwned
+    decorEquipped.value = d.decorEquipped
+    achievements.value = d.achievements
     counters.value = d.counters
     toasts.value = []
+    refreshOrders()
+    refreshQuests()
+  }
+
+  function resetSave(): void {
+    applySave(defaultSave())
     clearSave()
   }
 
@@ -246,5 +252,5 @@ export const useProfileStore = defineStore('profile', () => {
   watch(achievementContext, () => { checkAchievements() }, { deep: true })
   checkAchievements()
 
-  return { achievements, counters, toasts, achievementContext, checkAchievements, dismissToast, bump, decorOwned, decorEquipped, ownsDecor, isDecorEquipped, buyDecor, equipDecor, unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
+  return { applySave, achievements, counters, toasts, achievementContext, checkAchievements, dismissToast, bump, decorOwned, decorEquipped, ownsDecor, isDecorEquipped, buyDecor, equipDecor, unlockedPotatoes, selectedPotatoId, upgrades, orders, quests, leaderboard, selectedPotato, hasPotato, buyPotato, selectPotato, upgradeLevel, valueMult, buyUpgrade, refreshOrders, refreshQuests, claimQuest, recordRound, submitScore, money, totalEarned, ownedKnives, equippedKnifeId, stats, settings, equippedKnife, owns, canAfford, earn, buy, equip, openCrate, toSave, resetSave }
 })

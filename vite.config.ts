@@ -43,9 +43,10 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: ['app', 'vite', 'localhost'],
     watch: { usePolling: process.env.CHOKIDAR_USEPOLLING === 'true' },
+    proxy: { '/api': { target: process.env.API_URL ?? 'http://api:3000', changeOrigin: true } },
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
   },
 })

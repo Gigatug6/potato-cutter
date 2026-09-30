@@ -2,7 +2,7 @@
 
 ## Statut
 - Phase courante : 6 — suggestions
-- **Prochaine étape : 9.6 traduction EN** (commandes : `make check`, `make e2e`, `make dev`)
+- **Prochaine étape : 9.7 sauvegarde en ligne** (commandes : `make check`, `make e2e`, `make dev`)
 
 ## Checklist
 ### Phase 0 — Infra
@@ -55,7 +55,7 @@
 - [x] 9.3 Partage : capture PNG + Web Share
 - [x] 9.4 Manette (Gamepad API : curseur virtuel, A = éplucher/trancher, etc.)
 - [x] 9.5 Clients de restaurant 3D animés liés aux commandes
-- [ ] 9.6 Traduction EN (i18n FR/EN, sélecteur de langue)
+- [x] 9.6 Traduction EN (i18n FR/EN, sélecteur de langue)
 - [ ] 9.7 Sauvegarde en ligne (mini-serveur Node + export/import + code de synchro)
 - [ ] 9.8 Production : Caddy (Brotli/zstd/gzip, HTTPS auto) + doc CDN
 - [ ] 9.9 Textures KTX2/Basis : évaluer la faisabilité (encodeur requis)

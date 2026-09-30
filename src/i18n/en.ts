@@ -38,6 +38,12 @@ export const EXACT: Record<string, string> = {
   'Planches': 'Boards', 'Murs': 'Walls', 'Ambiances': 'Lighting', 'Objets': 'Props',
   'Plan de travail 3D : éplucher et trancher la patate (flèches gauche/droite pour placer le couteau, Entrée pour trancher)': '3D worktop: peel and slice the potato (left/right arrows to place the knife, Enter to slice)',
   'Fonctionnalités': 'Features',
+  '☁ Sauvegarde': '☁ Save data', 'Code de synchronisation': 'Sync code', 'Créer un code': 'Create a code', 'Envoyer': 'Upload', 'Restaurer': 'Restore',
+  'Exporter (.json)': 'Export (.json)', 'Importer un fichier': 'Import a file', 'Confirmer': 'Confirm',
+  'Serveur injoignable.': 'Server unreachable.', 'Code inconnu : aucune sauvegarde trouvée.': 'Unknown code: no save found.',
+  'Trop de requêtes, réessaie dans une minute.': 'Too many requests, try again in a minute.', 'Sauvegarde trop volumineuse.': 'Save too large.', 'Erreur du serveur.': 'Server error.',
+  'Code créé et sauvegarde envoyée. Note bien ce code !': 'Code created and save uploaded. Write this code down!', 'Sauvegarde envoyée.': 'Save uploaded.',
+  'Code invalide (16 caractères A–Z, 2–7).': 'Invalid code (16 characters A–Z, 2–7).', 'Fichier invalide.': 'Invalid file.', 'Sauvegarde restaurée.': 'Save restored.',
   // --- titres de page
   'Potato Cutter — simulateur 3D de découpe de patates en ligne (gratuit)': 'Potato Cutter — free 3D potato cutting simulator online',
   'En jeu · Potato Cutter': 'In game · Potato Cutter', 'Boutique : couteaux, patates, décors · Potato Cutter': 'Shop: knives, potatoes, decor · Potato Cutter',
@@ -97,6 +103,7 @@ export const EXACT: Record<string, string> = {
 
 type Tr = (s: string) => string
 export const RULES: [RegExp, (m: RegExpMatchArray, tr: Tr) => string][] = [
+  [/^Remplacer la sauvegarde locale par « (.+) » \?$/, (m) => `Replace the local save with “${m[1]}”?`],
   [/^Épluché (\d+) %$/, (m) => `Peeled ${m[1]} %`],
   [/^Coupes (\d+)\/(\d+)$/, (m) => `Cuts ${m[1]}/${m[2]}`],
   [/^⏳ (\d+) s · (\d+) 🥔 · (\d+) patate\(s\)$/, (m) => `⏳ ${m[1]} s · ${m[2]} 🥔 · ${m[3]} potato(es)`],
